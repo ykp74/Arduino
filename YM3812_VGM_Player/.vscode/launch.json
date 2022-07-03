@@ -12,7 +12,7 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "C:/Users/ykp74_desk/Google Drive/work_folder/YM3812_VGM_Player/.pio/build/teensy41/firmware.elf",
+            "executable": "c:/Users/ykp74_desk/Documents/Arduino/YM3812_VGM_Player/.pio/build/teensy41/firmware.elf",
             "projectEnvName": "teensy41",
             "toolchainBinDir": "C:/Users/ykp74_desk/.platformio/packages/toolchain-gccarmnoneeabi/bin",
             "internalConsoleOptions": "openOnSessionStart",
@@ -25,10 +25,20 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "C:/Users/ykp74_desk/Google Drive/work_folder/YM3812_VGM_Player/.pio/build/teensy41/firmware.elf",
+            "executable": "c:/Users/ykp74_desk/Documents/Arduino/YM3812_VGM_Player/.pio/build/teensy41/firmware.elf",
             "projectEnvName": "teensy41",
             "toolchainBinDir": "C:/Users/ykp74_desk/.platformio/packages/toolchain-gccarmnoneeabi/bin",
             "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "platformio-debug",
+            "request": "launch",
+            "name": "PIO Debug (without uploading)",
+            "executable": "c:/Users/ykp74_desk/Documents/Arduino/YM3812_VGM_Player/.pio/build/teensy41/firmware.elf",
+            "projectEnvName": "teensy41",
+            "toolchainBinDir": "C:/Users/ykp74_desk/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "internalConsoleOptions": "openOnSessionStart",
+            "loadMode": "manual"
         }
     ]
 }
