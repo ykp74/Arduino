@@ -3,7 +3,7 @@
 #define SUPPORT_PS4
 #define SUPPORT_MVS
 //#define SUPPORT_MSX
-#define _DEBUG
+//#define _DEBUG
 
 #ifdef SUPPORT_PS4
 #include <PS4BT.h>
@@ -32,12 +32,12 @@ BTD Btd(&Usb); // You have to create the Bluetooth Dongle instance like so
 /* You can create the instance of the PS4BT class in two ways */
 // This will start an inquiry and then pair with the PS4 controller - you only have to do this once
 // You will need to hold down the PS and Share button at the same time, the PS4 controller will then start to blink rapidly indicating that it is in pairing mode
-PS4BT PS4(&Btd, PAIR);
+//PS4BT PS4(&Btd, PAIR);
 // After that you can simply create the instance like so and then press the PS button on the device
-//PS4BT PS4(&Btd);
+PS4BT PS4(&Btd);
 #endif
 
-const int PIN_IND_LED  = 29;
+const int PIN_IND_LED  = 41;
 
 #ifdef SUPPORT_MSX
 const int PIN_UP      = 8;    // MSX up
@@ -50,20 +50,20 @@ const int PIN_T2      = 7;    // MSX TR2
 #endif
 
 #ifdef SUPPORT_MVS
-const int PIN_UP      = 30;
-const int PIN_DOWN    = 31;
-const int PIN_LEFT    = 32;
-const int PIN_RIGHT   = 33;
+const int PIN_UP      = 42;
+const int PIN_DOWN    = 43;
+const int PIN_LEFT    = 44;
+const int PIN_RIGHT   = 45;
 
-const int PIN_T1      = 36;
-const int PIN_T2      = 37;
-const int PIN_T3      = 38;
-const int PIN_T4      = 39;
-const int PIN_T5      = 40;
-const int PIN_T6      = 41;
+const int PIN_T1      = 48;
+const int PIN_T2      = 49;
+const int PIN_T3      = 50;
+const int PIN_T4      = 51;
+const int PIN_T5      = 52;
+const int PIN_T6      = 53;
 
-const int PIN_START   = 26; 
-const int PIN_CREDIT  = 27;
+const int PIN_START   = 38; 
+const int PIN_CREDIT  = 39;
 #endif
 
 volatile bool isUp, isDown, isLeft, isRight; 
@@ -73,203 +73,211 @@ volatile bool isStart, isSelect;
 volatile bool pushUp, pushDown, pushLeft, pushRight; 
 
 int bat_level = 0;
-bool isConnect = false;
 
 void get_BatLevel_handler(void){
-  int batLvl =  PS4.getBatteryLevel();
+    int batLvl =  PS4.getBatteryLevel();
 
-  if( bat_level != batLvl){
-    bat_level = batLvl;
+    if( bat_level != batLvl){
+        bat_level = batLvl;
     
-    if( bat_level > 8 ){
-      PS4.setLed(Blue);
-    } else if( bat_level > 6 ){
-      PS4.setLed(Green);
-    } else if( bat_level > 4 ){
-      PS4.setLed(Yellow);
-    } else {
-      PS4.setLed(Red);
-    } 
-  }
-  Serial.print("get_BatLevel_handler : ");
-  Serial.println(batLvl);
+        if( bat_level > 8 ){
+            PS4.setLed(Blue);
+        } else if( bat_level > 6 ){
+            PS4.setLed(Green);
+        } else if( bat_level > 4 ){
+            PS4.setLed(Yellow);
+        } else {
+            PS4.setLed(Red);
+        } 
+    }
+    Serial.print("get_BatLevel_handler : ");
+    Serial.println(batLvl);
 }
 
 void ind_led_handler(void){
     // Toggle LED
     digitalWrite( PIN_IND_LED, digitalRead( PIN_IND_LED ) ^ 1 );
 }
+
 void ind_led_eable(bool enable){
-    digitalWrite( PIN_IND_LED, enable );
+    static boolean isOn = false;
+
+    if(enable == true){
+        if(!isOn){
+            isOn = true;
+            digitalWrite( PIN_IND_LED, enable );
+            Serial.println("Connect PS Pad!!");
+        }
+    } else {
+        if(isOn){
+            isOn = false;
+            digitalWrite( PIN_IND_LED, enable );
+        }
+    }
 }
 
 void setup()
 {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
 #if !defined(__MIPSEL__)
-  while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
+    while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
 #endif
 
-  if (Usb.Init() == -1) {
-    Serial.print(F("\r\nOSC did not start"));
-    while (1); // Halt
-  }
-  isConnect = false;
-  pinMode( PIN_IND_LED, OUTPUT);
+    if (Usb.Init() == -1) {
+        Serial.print(F("\r\nOSC did not start"));
+        while (1); // Halt
+    }
+    pinMode( PIN_IND_LED, OUTPUT);
   
-  // usage define
-  pinMode( PIN_UP,     INPUT);
-  pinMode( PIN_DOWN,   INPUT);
-  pinMode( PIN_LEFT,   INPUT);
-  pinMode( PIN_RIGHT,  INPUT);
-  pinMode( PIN_T1,     INPUT);
-  pinMode( PIN_T2,     INPUT);
+    // usage define
+    pinMode( PIN_UP,     INPUT);
+    pinMode( PIN_DOWN,   INPUT);
+    pinMode( PIN_LEFT,   INPUT);
+    pinMode( PIN_RIGHT,  INPUT);
+    pinMode( PIN_T1,     INPUT);
+    pinMode( PIN_T2,     INPUT);
 #ifdef SUPPORT_MVS
-  pinMode( PIN_T3,     INPUT);
-  pinMode( PIN_T4,     INPUT);
-  pinMode( PIN_T5,     INPUT);
-  pinMode( PIN_T6,     INPUT);
-  pinMode( PIN_START,  INPUT);
-  pinMode( PIN_CREDIT, INPUT);
+    pinMode( PIN_T3,     INPUT);
+    pinMode( PIN_T4,     INPUT);
+    pinMode( PIN_T5,     INPUT);
+    pinMode( PIN_T6,     INPUT);
+    pinMode( PIN_START,  INPUT);
+    pinMode( PIN_CREDIT, INPUT);
 #endif
-  digitalWrite( PIN_IND_LED, LOW);
+    digitalWrite( PIN_IND_LED, LOW);
 
-  // initialize
-  digitalWrite(PIN_UP,    LOW);
-  digitalWrite(PIN_DOWN,  LOW);
-  digitalWrite(PIN_LEFT,  LOW);
-  digitalWrite(PIN_RIGHT, LOW);
-  digitalWrite(PIN_T1,    LOW);
-  digitalWrite(PIN_T2,    LOW);
+    // initialize
+    digitalWrite(PIN_UP,    LOW);
+    digitalWrite(PIN_DOWN,  LOW);
+    digitalWrite(PIN_LEFT,  LOW);
+    digitalWrite(PIN_RIGHT, LOW);
+    digitalWrite(PIN_T1,    LOW);
+    digitalWrite(PIN_T2,    LOW);
 #ifdef SUPPORT_MVS
-  digitalWrite(PIN_T3,    LOW);
-  digitalWrite(PIN_T4,    LOW);
-  digitalWrite(PIN_T5,    LOW);
-  digitalWrite(PIN_T6,    LOW);
-  digitalWrite(PIN_START, LOW);
-  digitalWrite(PIN_CREDIT,LOW);
+    digitalWrite(PIN_T3,    LOW);
+    digitalWrite(PIN_T4,    LOW);
+    digitalWrite(PIN_T5,    LOW);
+    digitalWrite(PIN_T6,    LOW);
+    digitalWrite(PIN_START, LOW);
+    digitalWrite(PIN_CREDIT,LOW);
 #endif
 
-  isUp = isDown = isLeft = isRight = false;
-  isA = isB = isC = isD = isE = isF = false;
+    isUp = isDown = isLeft = isRight = false;
+    isA = isB = isC = isD = isE = isF = false;
 
-  Timer3.attachInterrupt(get_BatLevel_handler).start(5000000);  // Calls every 5000ms
-  //Timer5.attachInterrupt(ind_led_handler).start(500000);  // Calls every 1s
-  Display.displayClear();
-  Display.displaySet(2);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
-  Display.displayNum(0,0);
-  Serial.print(F("\r\nPS4 Bluetooth Library Started"));
+    Timer3.attachInterrupt(get_BatLevel_handler).start(5000000);  // Calls every 5000ms
+    //Timer5.attachInterrupt(ind_led_handler).start(500000);  // Calls every 1s
+    Display.displayClear();
+    Display.displaySet(2);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
+    Display.displayNum(0,0);
+    Serial.print(F("\r\nPS4 Bluetooth Library Started"));
 }
 
 void loop()
 {
-  Usb.Task();
+    Usb.Task();
 
 #ifdef SUPPORT_PS4
-  if(!PS4.connected())
-#endif
-  {
-    isConnect = false;
-    ind_led_eable(false);
-    return;
-  } else {
-    isConnect = true;
-    ind_led_eable(true);
-  }
+    if(!PS4.connected()){
+        ind_led_eable(false);
+        return;
+    } else {
+        ind_led_eable(true);
+    }
 
-#ifdef SUPPORT_PS4
-  isUp    = ( PS4.getAnalogHat(LeftHatY) < 50 || PS4.getButtonPress(UP) );
-  isDown  = ( PS4.getAnalogHat(LeftHatY) > 200 || PS4.getButtonPress(DOWN) );
-  isLeft  = ( PS4.getAnalogHat(LeftHatX) < 50 || PS4.getButtonPress(LEFT) );
-  isRight = ( PS4.getAnalogHat(LeftHatX) > 200 || PS4.getButtonPress(RIGHT) );
-  isA = ( PS4.getButtonPress(CROSS) );
-  isB = ( PS4.getButtonPress(CIRCLE) );
-  isC = ( PS4.getButtonPress(SQUARE) );
-  isD = ( PS4.getButtonPress(TRIANGLE) );
-  isE = ( PS4.getButtonPress(L1) );
-  isF = ( PS4.getButtonPress(R1) );
-  isStart  = ( PS4.getButtonPress(OPTIONS) );
-  isSelect = ( PS4.getButtonPress(SHARE) );
+    isUp    = ( PS4.getAnalogHat(LeftHatY) < 50 || PS4.getButtonPress(UP) );
+    isDown  = ( PS4.getAnalogHat(LeftHatY) > 200 || PS4.getButtonPress(DOWN) );
+    isLeft  = ( PS4.getAnalogHat(LeftHatX) < 50 || PS4.getButtonPress(LEFT) );
+    isRight = ( PS4.getAnalogHat(LeftHatX) > 200 || PS4.getButtonPress(RIGHT) );
+    isA = ( PS4.getButtonPress(CROSS) );
+    isB = ( PS4.getButtonPress(CIRCLE) );
+    isC = ( PS4.getButtonPress(SQUARE) );
+    isD = ( PS4.getButtonPress(TRIANGLE) );
+    isE = ( PS4.getButtonPress(L1) );
+    isF = ( PS4.getButtonPress(R1) );
+    isStart  = ( PS4.getButtonPress(OPTIONS) );
+    isSelect = ( PS4.getButtonPress(SHARE) );
   
-  if(PS4.getButtonClick(PS)){
-    //Serial.println(F("\r\nPS"));
-    Serial.println("Disconnect PS4 Pad!!");
-    PS4.disconnect();
-  }
+    if(PS4.getButtonClick(PS)){
+        //Serial.println(F("\r\nPS"));
+        Serial.println("Disconnect PS4 Pad!!");
+        PS4.disconnect();
+        Usb.Init();
+    }
 #endif
 
-  pinMode( PIN_UP, isUp ? OUTPUT : INPUT);  //INPUT : floating
-  pinMode( PIN_DOWN, isDown ? OUTPUT : INPUT);
-  pinMode( PIN_LEFT, isLeft ? OUTPUT : INPUT);
-  pinMode( PIN_RIGHT, isRight ? OUTPUT : INPUT);
-  pinMode( PIN_T1, (isA) ? OUTPUT : INPUT);
-  pinMode( PIN_T2, (isB) ? OUTPUT : INPUT);
+    pinMode( PIN_UP, isUp ? OUTPUT : INPUT);  //INPUT : floating
+    pinMode( PIN_DOWN, isDown ? OUTPUT : INPUT);
+    pinMode( PIN_LEFT, isLeft ? OUTPUT : INPUT);
+    pinMode( PIN_RIGHT, isRight ? OUTPUT : INPUT);
+    pinMode( PIN_T1, (isA) ? OUTPUT : INPUT);
+    pinMode( PIN_T2, (isB) ? OUTPUT : INPUT);
 #ifdef SUPPORT_MVS
-  pinMode( PIN_T3, (isC) ? OUTPUT : INPUT);
-  pinMode( PIN_T4, (isD) ? OUTPUT : INPUT);
-  pinMode( PIN_T5, (isE) ? OUTPUT : INPUT);
-  pinMode( PIN_T6, (isF) ? OUTPUT : INPUT);
-  pinMode( PIN_START, isStart ? OUTPUT : INPUT);
-  pinMode( PIN_CREDIT, isSelect ? OUTPUT : INPUT);
+    pinMode( PIN_T3, (isC) ? OUTPUT : INPUT);
+    pinMode( PIN_T4, (isD) ? OUTPUT : INPUT);
+    pinMode( PIN_T5, (isE) ? OUTPUT : INPUT);
+    pinMode( PIN_T6, (isF) ? OUTPUT : INPUT);
+    pinMode( PIN_START, isStart ? OUTPUT : INPUT);
+    pinMode( PIN_CREDIT, isSelect ? OUTPUT : INPUT);
 #endif
 
 #ifdef _DEBUG
-  if (isUp){
-    if(!pushUp){
-      Serial.print(F("\r\nUp"));
-      //Display.displayNum(0,1); 
-      pushUp = true;
+    if(isUp){
+        if(!pushUp){
+            Serial.print(F("\r\nUp"));
+            //Display.displayNum(0,1); 
+            pushUp = true;
+        }
+    } else {
+        pushUp = false;
     }
-  } else {
-    pushUp = false;
-  }
 
-  if (isDown){
-    if(!pushDown){
-      Serial.print(F("\r\nDown"));
-      //Display.displayNum(0,2); 
-      pushDown = true;
+    if(isDown){
+        if(!pushDown){
+            Serial.print(F("\r\nDown"));
+            //Display.displayNum(0,2); 
+            pushDown = true;
+        }
+    } else {
+        pushDown = false;
     }
-  } else {
-    pushDown = false;
-  }
 
-  if(isLeft){
-    if(!pushLeft){
-      Serial.print(F("\r\nLeft"));
-      //Display.displayNum(0,3); 
-       pushLeft =true;
+    if(isLeft){
+        if(!pushLeft){
+            Serial.print(F("\r\nLeft"));
+            //Display.displayNum(0,3); 
+            pushLeft =true;
+        }
+    } else {
+        pushLeft = false;
     }
-  } else {
-    pushLeft = false;
-  }
 
-  if (isRight){
-    if(!pushRight){
-      Serial.print(F("\r\nRight"));
-      //Display.displayNum(0,4); 
-      pushRight = true;
+    if(isRight){
+        if(!pushRight){
+            Serial.print(F("\r\nRight"));
+            //Display.displayNum(0,4); 
+            pushRight = true;
+        }
+    } else {
+        pushRight = false;
     }
-  } else {
-    pushRight = false;
-  }
 
-//  if (isA){
-//    Serial.print(F("\r\nAkey"));
-//    //PS4.setLedFlash(10, 10); // Set it to blink rapidly
-//  }
-//  if (isB){
-//    Serial.print(F("\r\nBkey"));
-//    //PS4.setLedFlash(0, 0); // Turn off blinking
-//  }
-//  if (isStart){
-//    Serial.print(F("\r\nSTART key"));
-//    //PS4.setLedFlash(10, 10); // Set it to blink rapidly
-//  }
-//  if (isSelect){
-//    Serial.print(F("\r\nSelect key"));
-//    //PS4.setLedFlash(0, 0); // Turn off blinking
-//  }
+    if(isA){
+        Serial.print(F("\r\nAkey"));
+        //PS4.setLedFlash(10, 10); // Set it to blink rapidly
+    }
+    if(isB){
+        Serial.print(F("\r\nBkey"));
+        //PS4.setLedFlash(0, 0); // Turn off blinking
+    }
+    if(isStart){
+        Serial.print(F("\r\nSTART key"));
+        //PS4.setLedFlash(10, 10); // Set it to blink rapidly
+    }
+    if(isSelect){
+        Serial.print(F("\r\nSelect key"));
+        //PS4.setLedFlash(0, 0); // Turn off blinking
+    }
 #endif
 }
