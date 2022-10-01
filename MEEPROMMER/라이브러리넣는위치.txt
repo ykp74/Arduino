@@ -1,0 +1,5 @@
+TxRx라이브러리를 받고난 뒤 압축을 풀고
+
+RXTXcomm.jar는 %JAVAHOME%lib에 넣어주시고
+
+rxtxSerial.dll는 %JAVAHOME%bin에 넣어주시면 됩니다.
