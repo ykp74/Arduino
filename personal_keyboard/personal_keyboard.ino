@@ -6,7 +6,7 @@
 //definition
 //#define DEBUG
 
-#define VERSION         "KSND Multi Key Shield FW V1.2 (2022/07/04)"
+#define VERSION         "KSND Multi Key Shield FW V1.2 (2022/08/08)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
 #define debounceTime    50
@@ -35,7 +35,7 @@ const char key1_sen0[] = "flqbgkduTtmqslek."; //reviewed for hangle
 const char key2_sen0[] = "00153pykk*";  //password_1
 
 //Key_3 secondary Password
-const char key3_sen0[] = "yykp0153*";  //password_2
+const char key3_sen0[] = "yykp01533*";  //password_2
 
 enum key_state {
     KEY_NONE,
