@@ -30,7 +30,7 @@ enum DPADEnum {
 };
 
 // To enable serial debugging see "settings.h"
-#define PRINTREPORT // Uncomment to print the report send by the PS4 Controller
+//#define PRINTREPORT // Uncomment to print the report send by the PS4 Controller
 
 int8_t PS4Parser::getButtonIndexPS4(ButtonEnum b) {
     const int8_t index = ButtonIndex(b);

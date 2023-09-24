@@ -17,8 +17,8 @@
 
 #include "BTHID.h"
 // To enable serial debugging see "settings.h"
-#define EXTRADEBUG // Uncomment to get even more debugging data
-#define PRINTREPORT // Uncomment to print the report send by the HID device
+//#define EXTRADEBUG // Uncomment to get even more debugging data
+//#define PRINTREPORT // Uncomment to print the report send by the HID device
 
 BTHID::BTHID(BTD *p, bool pair, const char *pin) :
 BluetoothService(p), // Pointer to USB class instance - mandatory
