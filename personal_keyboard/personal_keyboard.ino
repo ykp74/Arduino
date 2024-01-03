@@ -6,7 +6,7 @@
 //definition
 //#define DEBUG
 
-#define VERSION         "KSND Multi Key Shield FW V1.3 (2023/03/24)"
+#define VERSION         "KSND Multi Key Shield FW V1.4 (2024/01/03)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
 #define debounceTime    50
@@ -18,6 +18,7 @@
 
 // Indicator
 #define LED1    6
+#define LED_STANDBY  13
 
 long last_time_ms = 0; 
 long current_time_ms;
@@ -32,10 +33,12 @@ const char key0_sen2[] = "Approved.";
 const char key1_sen0[] = "flqbgkduTtmqslek."; //reviewed for hangle
 
 //Key_2 primary Password
-const char key2_sen0[] = "00153pyk*";  //password_1
+//const char key2_sen0[] = "00153pyk*";  //password_1
+const char key2_sen0[] = "00153Pykk*";  //password_1 대문자 추가
 
 //Key_3 secondary Password
-const char key3_sen0[] = "yykp0153*";  //password_2
+//const char key3_sen0[] = "yykp0153*";  //password_2
+const char key3_sen0[] = "Yykp01533*";  //password_2 대문자 추가
 
 enum key_state {
     KEY_NONE,
@@ -56,8 +59,10 @@ struct _keyboard {
 } key;
 
 void timerIsr(void) {
-    // Toggle LED
-    digitalWrite( 13, digitalRead( 13 ) ^ 1 );
+    // Toggle Monitoring LED
+    digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
+    delay(10);
+    digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
 }
 
 int key_input_check(void)
@@ -84,7 +89,7 @@ int key_input_check(void)
             } 
             else if(PUSH(KEY_1)){   //Key_1
                 current_time_ms = millis();
-                if( !is_first_push ){
+                if(!is_first_push){
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
@@ -98,9 +103,9 @@ int key_input_check(void)
                     is_first_push = false;   
                 }
             }
-            else if(PUSH(KEY_2)){   //Key_2
+            else if(PUSH(KEY_2)){   //Key_2 Password 1
                 current_time_ms = millis();
-                if( !is_first_push ){
+                if(!is_first_push){
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
@@ -115,9 +120,9 @@ int key_input_check(void)
                     is_first_push = false;   
                 }
             }
-            else if(PUSH(KEY_3)){   //Key_3
+            else if(PUSH(KEY_3)){   //Key_3 Password 2
                 current_time_ms = millis();
-                if( !is_first_push ){
+                if(!is_first_push){
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
@@ -207,7 +212,7 @@ void setup()
     pinMode(KEY_1, INPUT_PULLUP);
     pinMode(KEY_2, INPUT_PULLUP);
     pinMode(KEY_3, INPUT_PULLUP);
-    pinMode(13, OUTPUT);
+    pinMode(LED_STANDBY, OUTPUT);
     pinMode(LED1, OUTPUT);
 
     Serial.begin(115200); // initialize mouse and keyboard control
@@ -215,7 +220,8 @@ void setup()
     Keyboard.begin();
     
     // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
-    Timer1.initialize(500000); 
+    //Timer1.initialize(500000); 
+    Timer1.initialize(1000000); 
     Timer1.attachInterrupt( timerIsr ); // attach the service routine here
 #ifdef DEBUG
     Serial.println("Boot Done!!");
