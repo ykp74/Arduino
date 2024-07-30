@@ -5,7 +5,9 @@
 #define MINOR_VERSION "1"
 #define VERSION       ("v" MAJOR_VERSION "." MINOR_VERSION)
 
-#define _DEBUG
+
+//#define DEBUG_DETAIL
+#define _NANO
 // 91% is safe : 120544
 // 92% has error : 121192
 
@@ -21,15 +23,36 @@ int pin_RAddr[2] = { 10, 12 };
 const int pin_WE = 4;
 const int pin_RE = 5;
 
+const int pin_POWER = 0;
+
+#ifdef _NANO
+void DBG(String msg)          { Serial.print(msg); }
+void DBGHEX(long int data)    { Serial.print( String(data, HEX) + " "); }
+void DBG(int num)             { Serial.print( String(num) + " "); }
+void DBGLN(String msg)        { Serial.println(msg); }
+void DBGHEXLN(long int data)  { Serial.println( String(data, HEX) + " "); }
+void DBGLN(int num)           { Serial.println( String(num) + " "); }
+#else
 void DBG(String msg)          { SerialUSB.print(msg); }
 void DBGHEX(long int data)    { SerialUSB.print( String(data, HEX) + " "); }
 void DBG(int num)             { SerialUSB.print( String(num) + " "); }
 void DBGLN(String msg)        { SerialUSB.println(msg); }
 void DBGHEXLN(long int data)  { SerialUSB.println( String(data, HEX) + " "); }
 void DBGLN(int num)           { SerialUSB.println( String(num) + " "); }
+#endif
 
 void Dump(uint8_t len, uint8_t *buf)
 {
+#ifdef _NANO
+    for (int i = 0; i<len; i++) {
+        Serial.print(buf[i], HEX);
+        if( i % 32 == 31 )
+            Serial.println("");
+        else
+            Serial.print(",");
+    }
+    Serial.println("");
+#else
     for (int i = 0; i<len; i++) {
         SerialUSB.print(buf[i], HEX);
         if( i % 32 == 31 )
@@ -38,12 +61,18 @@ void Dump(uint8_t len, uint8_t *buf)
             SerialUSB.print(",");
     }
     SerialUSB.println("");
+#endif
 }
 
 void DBGPAUSE()
 {
+#ifdef _NANO
+    while( Serial.available() == 0 );
+    Serial.read();
+#else
     while( SerialUSB.available() == 0 );
     SerialUSB.read();
+#endif
 }
 
 /** 
@@ -131,13 +160,16 @@ byte Read670( byte addr )
 
 void setup() {
   // put your setup code here, to run once:
-  SerialUSB.begin(SERIAL_SPEED);
-  
+#ifdef _NANO
+  Serial.begin(SERIAL_SPEED); 
+  Serial.println( String(PRODUCT) + String(" ") + String(VERSION) );
+#else
+  SerialUSB.begin(SERIAL_SPEED); 
   while (!SerialUSB) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  
   SerialUSB.println( String(PRODUCT) + String(" ") + String(VERSION) );
+#endif
 
   pinMode( pin_WE, OUTPUT );
   pinMode( pin_WAddr[0], OUTPUT );
@@ -160,6 +192,17 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+    DBGLN("PHASE 0");
+    for (int a=0; a<4; a++){
+      byte data;
+      data = Read670(a);
+      DBG( "add : " );
+      DBG( a );
+      DBG( " data : " );
+      DBGHEXLN( data );
+    }
+    DBGPAUSE();
+#if 0
     DBGLN("PHASE 1");
     // Store and check 2 different values in 4 addresses one address at a time. Total 8 checks for phase 1
     byte v[2] = { 0x5, 0xa };
@@ -202,7 +245,7 @@ void loop() {
             }
         }
     }
-
+#endif
     DBGLN("\nCompleted");
     DBGPAUSE();
 }
