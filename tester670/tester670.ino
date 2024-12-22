@@ -5,6 +5,8 @@
 #define MINOR_VERSION "1"
 #define VERSION       ("v" MAJOR_VERSION "." MINOR_VERSION)
 
+#define FEATURE_YKP
+
 #define _DEBUG
 // 91% is safe : 120544
 // 92% has error : 121192
@@ -13,7 +15,7 @@
 
 // Global --------------
 int pin_WData[4] = { A1, A3, A2, A0 };
-int pin_RData[4] = { 6, 7, 8, 9 };
+int pin_RData[4] = { 6, 7, 8, 9 }; //q1 q2 q3 q4
 
 int pin_WAddr[2] = { 2, 3 };
 int pin_RAddr[2] = { 10, 12 };
@@ -21,13 +23,41 @@ int pin_RAddr[2] = { 10, 12 };
 const int pin_WE = 4;
 const int pin_RE = 5;
 
+#ifdef FEATURE_YKP
+void DBG(String msg)          { Serial.print(msg); }
+void DBGHEX(long int data)    { Serial.print( String(data, HEX) + " "); }
+void DBG(int num)             { Serial.print( String(num) + " "); }
+void DBGLN(String msg)        { Serial.println(msg); }
+void DBGHEXLN(long int data)  { Serial.println( String(data, HEX) + " "); }
+void DBGLN(int num)           { Serial.println( String(num) + " "); }
+#else
 void DBG(String msg)          { SerialUSB.print(msg); }
 void DBGHEX(long int data)    { SerialUSB.print( String(data, HEX) + " "); }
 void DBG(int num)             { SerialUSB.print( String(num) + " "); }
 void DBGLN(String msg)        { SerialUSB.println(msg); }
 void DBGHEXLN(long int data)  { SerialUSB.println( String(data, HEX) + " "); }
 void DBGLN(int num)           { SerialUSB.println( String(num) + " "); }
+#endif
 
+#ifdef FEATURE_YKP
+void Dump(uint8_t len, uint8_t *buf)
+{
+    for (int i = 0; i<len; i++) {
+        Serial.print(buf[i], HEX);
+        if( i % 32 == 31 )
+            Serial.println("");
+        else
+            Serial.print(",");
+    }
+    Serial.println("");
+}
+
+void DBGPAUSE()
+{
+    while( Serial.available() == 0 );
+    Serial.read();
+}
+#else
 void Dump(uint8_t len, uint8_t *buf)
 {
     for (int i = 0; i<len; i++) {
@@ -45,6 +75,7 @@ void DBGPAUSE()
     while( SerialUSB.available() == 0 );
     SerialUSB.read();
 }
+#endif
 
 /** 
  *  Writes a value pinCount bits long to the pins specified in the 3rd argument.
@@ -131,13 +162,21 @@ byte Read670( byte addr )
 
 void setup() {
   // put your setup code here, to run once:
+#ifdef FEATURE_YKP
+  Serial.begin(SERIAL_SPEED);
+#else
   SerialUSB.begin(SERIAL_SPEED);
   
   while (!SerialUSB) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  
+#endif
+
+#ifdef FEATURE_YKP
+  Serial.println( String(PRODUCT) + String(" ") + String(VERSION) );
+#else
   SerialUSB.println( String(PRODUCT) + String(" ") + String(VERSION) );
+#endif
 
   pinMode( pin_WE, OUTPUT );
   pinMode( pin_WAddr[0], OUTPUT );

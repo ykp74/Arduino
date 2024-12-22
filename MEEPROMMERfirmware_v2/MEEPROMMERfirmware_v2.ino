@@ -1,4 +1,4 @@
-#define VERSIONSTRING "KSND ROM WRITTER FW V2.1 (2021/09/23 07:13)"
+#define VERSIONSTRING "KSND ROM WRITTER FW V2.2 (2024/11/29 03:28)"
 #define ARDUINO_NANO
 
 //Manufacturer Code
@@ -290,30 +290,37 @@ void idread_eeprom( void ) {
   Serial.println(" ");
     
   Serial.print("EEPROM Manufacture Code : 0x");
-  Serial.println(manufacture_code, HEX);
+  Serial.print(manufacture_code, HEX);
+  if( manufacture_code == WINBOND ){
+      Serial.println(" WINBOND ");
+  } else if ( manufacture_code == ATMEL ){
+      Serial.println(" ATMEL ");
+  } else {
+      Serial.println(" Unknown ");
+  }
   Serial.print("ROM Device Code : ");
 
   switch(device_code){
     case AT29C256:
-      Serial.print("(AT29C256) Sector Size : 64 ");
+      Serial.println("(AT29C256) Sector Size : 64 ");
       sectorsize =  64;
       end_addr   = 0x7fff;                            
       break;
 
     case AT29C512:
-      Serial.print("(AT29C512) Sector Size : 128 ");
+      Serial.println("(AT29C512) Sector Size : 128 ");
       sectorsize = 128; 
       end_addr   = 0xffff; 
       break;
 
     case AT29C010A:
-      Serial.print("(AT29C010A) Sector Size : ");
+      Serial.println("(AT29C010A) Sector Size : ");
       sectorsize = 128; 
       end_addr = 0x1ffff;
       break;
 
     case W29C020:
-      Serial.print("(W29C020) Sector Size : 128 ");
+      Serial.println("(W29C020) Sector Size : 128 ");
       sectorsize = 128; 
       end_addr = 0x3ffff;
       break;
@@ -484,8 +491,11 @@ void command_read(void) {
   //now read serial data until linebreak or buffer is full
   do {
     timer++;
-    if(timer%50000 == 0){
+    if(timer%1000 == 0){
        display_byte(count++);
+       if( count == 10){
+          count = 0;
+       }
     }
     if( Serial.available()) {
       c = Serial.read();
@@ -580,7 +590,7 @@ void loop() {
 
   switch(cmd) {
     case READ_HEX:  //Local Display in terminal Screen
-      display_byte(0xb);
+      display_byte(0xa);
       if(lineLength == 0){
         lineLength = 16;
       }
@@ -611,22 +621,25 @@ void loop() {
       break;
 
     case TEST_WRITE:     //29C256 Flash_ROM
+      display_byte(0xc);
       enable_protection_eeprom();
       write_block(0x08000, buffer, 128);
       write_block(0x08080, buffer, 128);
       break;
 
     case TEST_ADDRESS:
+      display_byte(0xd);
       startAddress = 0x00000;
       endAddress = 0x00fff;
       lineLength = 0x20;
-      read_block(startAddress,endAddress,lineLength);      
+      read_block(startAddress, endAddress, lineLength);      
       break;
       
     case TEST_READ_BIN:
+      display_byte(0xe);
       startAddress = 0x00000;
       endAddress = 0x00fff;
-      read_binblock(startAddress,endAddress); 
+      read_binblock(startAddress, endAddress); 
       break;
 
     case VERSION:
