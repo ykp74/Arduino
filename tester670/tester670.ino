@@ -14,7 +14,6 @@
 #define SERIAL_SPEED    115200
 
 // Global --------------
-
 int pin_WData[4] = { A1, A3, A2, A0 };  //D0 D1 D2 D3
 int pin_RData[4] = { 6, 7, 8, 9 };      //Q0 Q1 Q2 Q3
 
@@ -23,8 +22,6 @@ int pin_RAddr[2] = { 10, 12 };
 
 const int pin_WE = 4;
 const int pin_RE = 5;
-
-
 const int pin_POWER = A6;
 
 #ifdef _NANO
@@ -43,26 +40,7 @@ void DBGHEXLN(long int data)  { SerialUSB.println( String(data, HEX) + " "); }
 void DBGLN(int num)           { SerialUSB.println( String(num) + " "); }
 #endif
 
-#ifdef FEATURE_YKP
-void Dump(uint8_t len, uint8_t *buf)
-{
-    for (int i = 0; i<len; i++) {
-        Serial.print(buf[i], HEX);
-        if( i % 32 == 31 )
-            Serial.println("");
-        else
-            Serial.print(",");
-    }
-    Serial.println("");
-}
-
-void DBGPAUSE()
-{
-    while( Serial.available() == 0 );
-    Serial.read();
-}
-#else
-void Dump(uint8_t len, uint8_t *buf)
+void DUMP_BUF(uint8_t len, uint8_t *buf)
 {
 #ifdef _NANO
     for (int i = 0; i<len; i++) {
@@ -95,7 +73,6 @@ void DBGPAUSE()
     SerialUSB.read();
 #endif
 }
-#endif
 
 /** 
  *  Writes a value pinCount bits long to the pins specified in the 3rd argument.
@@ -216,8 +193,8 @@ void setup() {
 void loop() {
     // put your main code here, to run repeatedly:
     DBGLN("PHASE 0");
-    for(int a=0; a<4; a++)
-    {
+    
+    for(int a=0; a<4; a++){
         byte data;
         data = Read670(a);
         DBG( "add : " );
@@ -231,19 +208,14 @@ void loop() {
     DBGLN("PHASE 1");
     // Store and check 2 different values in 4 addresses one address at a time. Total 8 checks for phase 1
     byte v[2] = { 0x5, 0xa };
-    for( int i=0; i<2; i++ )
-    {
-        for( int a=0; a<4; a++ )
-        {
-            Write670( a, v[i] );
-            if( Read670(a) != v[i] )
-            {
+    for( int i=0; i<2; i++ ){
+        for( int a=0; a<4; a++ ){
+            Write670( a, v[i] );            
+            if( Read670(a) != v[i] ) {
                 DBG( "Error at ");
                 DBGHEXLN( a );
                 DBGPAUSE();
-            }
-            else 
-            {
+            } else {
                 DBG(".");
             }
         }
@@ -251,21 +223,16 @@ void loop() {
 
     DBGLN("\nPHASE 2");
     // Store and check 16 different values in 4 addresses one address at a time. Total 64 checks for phase 2
-    for( int a=0; a<4; a++ )
-    {
-        for( int d=0; d<16; d++ )
-        {
+    for( int a=0; a<4; a++ ){
+        for( int d=0; d<16; d++ ){
             Write670( a, d );
-            if( Read670(a) != d )
-            {
+            if( Read670(a) != d ){
                 DBG( "Error at ");
                 DBGHEX( a );
                 DBG( ", Value = ");
                 DBGHEXLN( d );
                 DBGPAUSE();
-            }
-            else 
-            {
+            } else {
                 DBG(".");
             }
         }
