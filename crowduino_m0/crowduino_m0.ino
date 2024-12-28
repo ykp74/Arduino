@@ -1,18 +1,20 @@
 //Crowduino : 타겟설정, Arduino M0(native USB Port) 설정권장.
 //테스트 및 빌드 확인 코드.
-#include <Adafruit_GFX.h>  //OLED Driver header
+//#include <Adafruit_GFX.h>  //OLED Driver header
 #include <FreeRTOS_SAMD21.h>
 
 #include <SD.h>
 File root;
 
 #include <DFRobot_AD9837.h>
+#include <SPI.h>
+
 uint8_t ssPin = 5;
 // Initialize an instance, through which the class interface is called.
 DFRobot_AD9837 AD9837(/* fscPin= */ ssPin, /* *pSpi= */ &SPI);
 
 #define ERROR_LED_PIN 13              //Led Pin: Typical Arduino Board
-#define ERROR_LED_LIGHTUP_STATE HIGH  // the state that makes the led light up on your board, either low or high
+//#define ERROR_LED_LIGHTUP_STATE HIGH  // the state that makes the led light up on your board, either low or high
 #define SERIAL SerialUSB              //Sparkfun Samd21 Boards
 
 //**************************************************************************
@@ -20,7 +22,8 @@ DFRobot_AD9837 AD9837(/* fscPin= */ ssPin, /* *pSpi= */ &SPI);
 //**************************************************************************
 //TaskHandle_t Handle_aTask;
 //TaskHandle_t Handle_bTask;
-TaskHandle_t Handle_monitorTask;
+TaskHandle_t Handle_thread_input_control;
+TaskHandle_t Handle_thread_monitorTask;
 TaskHandle_t Handle_thread_led_control;
 TaskHandle_t Handle_thread_sd_memory;
 
@@ -40,7 +43,7 @@ void myDelayMs(int ms) {
 void myDelayMsUntil(TickType_t *previousWakeTime, int ms) {
   vTaskDelayUntil(previousWakeTime, (ms * 1000) / portTICK_PERIOD_US);
 }
-
+#if 0
 //*****************************************************************
 // Create a thread that prints out A to the screen every two seconds
 // this task will delete its self after printing out afew messages
@@ -73,105 +76,7 @@ static void threadB(void *pvParameters) {
     myDelayMs(2000);
   }
 }
-
-static void thread_led_control(void *pvParameters) {
-  SERIAL.println("thread_led_control : Started");
-
-  while (1) {
-    digitalWrite(ERROR_LED_PIN, true);
-    //AD9837.outputSquare(/* divide= */AD9837.eDIV2_1, /* phase= */0, /* freq= */1);
-    // SERIAL.println("B");
-    // SERIAL.flush();
-    myDelayMs(1000);
-    digitalWrite(ERROR_LED_PIN, false);
-    //AD9837.outputSquare(/* divide= */AD9837.eDIV2_1, /* phase= */0, /* freq= */5);
-    myDelayMs(1000);
-  }
-}
-
-static void thread_sd_memory(void *pvParameters) {
-  SERIAL.println("thread_sd_memory : Started");
-
-  //Init SD Memory Card and read the file name
-  SERIAL.print("Initializing SD card...");
-  if (!SD.begin(4)) {
-    SERIAL.println("initialization failed!");
-  } else {
-    SERIAL.println("initialization done.");
-
-    root = SD.open("/");
-    printDirectory(root, 0);
-    SERIAL.println("done!");
-  }
-
-  while (1) {
-    SERIAL.println("thread_sd_memory : Processiung!!");
-    SERIAL.flush();
-    myDelayMs(2000);
-  }
-}
-
-void init_ad9837(void) {
-  //Function generator
-  AD9837.begin(/* frequency= */ 10000000);
-  AD9837.moduleReset(/* mode= */ AD9837.eReset_DIS);
-  AD9837.moduleSleep(/* MCLK= */ AD9837.eSleepMCLK_NO, /* dacMode= */ AD9837.eSleepDAC_NO);
-  AD9837.outputSquare(/* divide= */ AD9837.eDIV2_1, /* phase= */ 0, /* freq= */ 5); //Output Frequency Hz
-
-  SerialUSB.println("AD9837 begin ok!");
-}
-
-void setup() {
-  // Open serial communications and wait for port to open:
-  //M0 에서는 시리얼출력시에는 USB로 설정해야 한다. Serial이 3개로 지원되기 때문
-  SerialUSB.begin(115200);
-
-  while (!SerialUSB) {
-    ;  // wait for serial port to connect. Needed for native USB port only
-  }
-
-  //init AD9837 process
-  init_ad9837();
-
-  pinMode(ERROR_LED_PIN, OUTPUT);
-  digitalWrite(ERROR_LED_PIN, LOW);
-  // SerialUSB.print("Initializing SD card...");
-
-  // if (!SD.begin(4)) {
-  //   SerialUSB.println("initialization failed!");
-  // } else {
-  //   SerialUSB.println("initialization done.");
-
-  //   root = SD.open("/");
-  //   printDirectory(root, 0);
-  //   SerialUSB.println("done!");
-  // }
-
-  // Create the threads that will be managed by the rtos
-  // Sets the stack size and priority of each task
-  // Also initializes a handler pointer to each task, which are important to communicate with and retrieve info from tasks
-
-  //xTaskCreate(threadA,     "Task A",       256, NULL, tskIDLE_PRIORITY + 3, &Handle_aTask);
-  //xTaskCreate(threadB,     "Task B",       256, NULL, tskIDLE_PRIORITY + 2, &Handle_bTask);
-  xTaskCreate(thread_sd_memory, "Task SD", 256, NULL, tskIDLE_PRIORITY + 2, &Handle_thread_sd_memory);
-  xTaskCreate(thread_led_control, "Task LED", 256, NULL, tskIDLE_PRIORITY + 3, &Handle_thread_led_control);
-  xTaskCreate(taskMonitor, "Task Monitor", 256, NULL, tskIDLE_PRIORITY + 1, &Handle_monitorTask);
-
-  // Start the RTOS, this function will never return and will schedule the tasks.
-  vTaskStartScheduler();
-
-  // error scheduler failed to start
-  // should never get here
-  // while(1){
-  //   SERIAL.println("Scheduler Failed! \n");
-  //   SERIAL.flush();
-  //   delay(1000);
-}
-
-void loop() {
-  // nothing happens after setup finishes.
-}
-
+#endif
 
 void printDirectory(File dir, int numTabs) {
   while (true) {
@@ -197,13 +102,97 @@ void printDirectory(File dir, int numTabs) {
   }
 }
 
+static void thread_input_control(void *pvParameters) {
+  SERIAL.println("thread_input_control : Started");
+
+  while (1) {
+      if (SERIAL.available()){
+          char inputChar = SERIAL.read();
+          switch(inputChar){
+            case 'r':
+            case 'R':
+                SERIAL.println("Resetting...");
+                delay(500); // 메시지가 출력될 시간을 제공
+                NVIC_SystemReset();  // 소프트웨어 리셋 함수 호출
+                break;
+            case 'a':
+                SERIAL.println("a...");
+                AD9837.moduleReset(/* mode= */ AD9837.eReset_DIS);
+                AD9837.outputSquare(/* divide= */ AD9837.eDIV2_1, /* phase= */ 0, /* freq= */ 10); //Output Frequency Hz
+                break;
+            case 'b':
+                SERIAL.println("b...");
+                AD9837.moduleReset(/* mode= */ AD9837.eReset_DIS);
+                AD9837.outputSquare(/* divide= */ AD9837.eDIV2_1, /* phase= */ 0, /* freq= */ 10000); //Output Frequency Hz
+                break;
+            case 's':
+                SERIAL.println("s...");
+                AD9837.moduleReset(/* mode= */ AD9837.eReset_EN);
+                break;
+          }
+      }
+  }
+
+  // delete ourselves.
+  // Have to call this or the system crashes when you reach the end bracket and then get scheduled.
+  SERIAL.println("Task Monitor: Deleting");
+  vTaskDelete(NULL);
+}
+
+static void thread_led_control(void *pvParameters) {
+    SERIAL.println("thread_led_control : Started");
+
+    while (1) {
+        digitalWrite(ERROR_LED_PIN, true);
+        //AD9837.outputSquare(/* divide= */AD9837.eDIV2_1, /* phase= */0, /* freq= */1);
+        // SERIAL.println("B");
+        // SERIAL.flush();
+        myDelayMs(1000);
+        digitalWrite(ERROR_LED_PIN, false);
+        //AD9837.outputSquare(/* divide= */AD9837.eDIV2_1, /* phase= */0, /* freq= */5);
+        myDelayMs(1000);
+    }
+
+    // delete ourselves.
+    // Have to call this or the system crashes when you reach the end bracket and then get scheduled.
+    SERIAL.println("Task Monitor: Deleting");
+    vTaskDelete(NULL);
+}
+
+static void thread_sd_memory(void *pvParameters) {
+  SERIAL.println("thread_sd_memory : Started");
+
+  //Init SD Memory Card and read the file name
+  SERIAL.print("Initializing SD card...");
+  if (!SD.begin(4)) {
+    SERIAL.println("initialization failed!");
+  } else {
+    SERIAL.println("initialization done.");
+
+    root = SD.open("/");
+    printDirectory(root, 0);
+    SERIAL.println("done!");
+  }
+
+  while (1) {
+    //SERIAL.println("thread_sd_memory : Processiung!!");
+    SERIAL.flush();
+    myDelayMs(2000);
+  }
+
+  // delete ourselves.
+  // Have to call this or the system crashes when you reach the end bracket and then get scheduled.
+  SERIAL.println("Task Monitor: Deleting");
+  vTaskDelete(NULL);
+}
+
 //*****************************************************************
 // Task will periodically print out useful information about the tasks running
 // Is a useful tool to help figure out stack sizes being used
 // Run time stats are generated from all task timing collected since startup
 // No easy way yet to clear the run time stats yet
 //*****************************************************************
-void taskMonitor(void *pvParameters) {
+void thread_Monitor(void *pvParameters) {
   static char ptrTaskList[400];  //temporary string buffer for task stats
 
   int x;
@@ -254,7 +243,7 @@ void taskMonitor(void *pvParameters) {
     SERIAL.print("Thread LED Control ");
     SERIAL.println(measurement);
 
-    measurement = uxTaskGetStackHighWaterMark(Handle_monitorTask);
+    measurement = uxTaskGetStackHighWaterMark(Handle_thread_monitorTask);
     SERIAL.print("Monitor Stack: ");
     SERIAL.println(measurement);
 
@@ -266,4 +255,75 @@ void taskMonitor(void *pvParameters) {
   // Have to call this or the system crashes when you reach the end bracket and then get scheduled.
   SERIAL.println("Task Monitor: Deleting");
   vTaskDelete(NULL);
+}
+
+void softwareReset() {
+    NVIC_SystemReset();  // 소프트웨어 리셋 함수 호출
+}
+
+void init_ad9837(void) {
+    //Function generator
+    AD9837.begin(/* frequency= */ 10000000);
+    AD9837.moduleReset(/* mode= */ AD9837.eReset_DIS);
+    AD9837.moduleSleep(/* MCLK= */ AD9837.eSleepMCLK_NO, /* dacMode= */ AD9837.eSleepDAC_NO);
+    AD9837.outputSquare(/* divide= */ AD9837.eDIV2_1, /* phase= */ 0, /* freq= */ 1); //Output Frequency Hz
+
+    SerialUSB.println("AD9837 begin ok!");
+
+    // SPI 초기화
+    // SPI.begin();
+    // SPI.setClockDivider(SPI_CLOCK_DIV64); // SPI 클럭 속도 설정
+    // SPI.setDataMode(SPI_MODE1);          // AD9837은 SPI 모드 2 사용 (CPOL=1, CPHA=0)
+    // SPI.setBitOrder(MSBFIRST);           // MSB부터 전송
+    
+    // pinMode(CS_PIN, OUTPUT);  // CS 핀 설정
+    // digitalWrite(CS_PIN, HIGH); // 기본적으로 비활성화
+
+    // // AD9837 리셋
+    // resetAD9837();
+    // setFrequency(frequency); // 초기 주파수 설정
+}
+
+void setup() {
+  // Open serial communications and wait for port to open:
+  //M0 에서는 시리얼출력시에는 USB로 설정해야 한다. Serial이 3개로 지원되기 때문
+  SerialUSB.begin(115200);
+
+  while (!SerialUSB) {
+    ;  // wait for serial port to connect. Needed for native USB port only
+  }
+
+  SERIAL.println("Booting!!!!!!!!!!!");
+  
+  //init AD9837 process
+  init_ad9837();
+
+  pinMode(ERROR_LED_PIN, OUTPUT);
+  digitalWrite(ERROR_LED_PIN, LOW);
+
+  // Create the threads that will be managed by the rtos
+  // Sets the stack size and priority of each task
+  // Also initializes a handler pointer to each task, which are important to communicate with and retrieve info from tasks
+
+  //xTaskCreate(threadA,     "Task A",       256, NULL, tskIDLE_PRIORITY + 3, &Handle_aTask);
+  //xTaskCreate(threadB,     "Task B",       256, NULL, tskIDLE_PRIORITY + 2, &Handle_bTask);
+  xTaskCreate(thread_input_control, "Task Input", 256, NULL,    tskIDLE_PRIORITY + 1, &Handle_thread_input_control);
+  xTaskCreate(thread_sd_memory,     "Task SD", 256, NULL,       tskIDLE_PRIORITY + 2, &Handle_thread_sd_memory);
+  xTaskCreate(thread_led_control,   "Task LED", 256, NULL,      tskIDLE_PRIORITY + 3, &Handle_thread_led_control);
+  xTaskCreate(thread_Monitor,       "Task Monitor", 256, NULL,  tskIDLE_PRIORITY + 4, &Handle_thread_monitorTask);
+
+  // Start the RTOS, this function will never return and will schedule the tasks.
+  vTaskStartScheduler();
+
+  // error scheduler failed to start
+  // should never get here
+   while(1){
+     SERIAL.println("Scheduler Failed! \n");
+     SERIAL.flush();
+     delay(1000);
+   }
+}
+
+void loop() {
+  // nothing happens after setup finishes.
 }
