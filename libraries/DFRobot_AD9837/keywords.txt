@@ -1,0 +1,48 @@
+#######################################
+# Syntax Coloring Map For DFRobot_AD9837
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DFRobot_AD9837	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+moduleReset	KEYWORD2
+moduleSleep	KEYWORD2
+outputSin	KEYWORD2
+outputTriangle	KEYWORD2
+outputSquare	KEYWORD2
+outputStandardWave	KEYWORD2
+selectRegister	KEYWORD2
+setParam	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+eB28_0	LITERAL1
+eB28_1	LITERAL1
+eHLB_L	LITERAL1
+eHLB_M	LITERAL1
+eFSEL_0	LITERAL1
+eFSEL_1	LITERAL1
+ePSEL_0	LITERAL1
+ePSEL_1	LITERAL1
+eReset_DIS	LITERAL1
+eReset_EN	LITERAL1
+eSleepMCLK_NO	LITERAL1
+eSleepMCLK_YES	LITERAL1
+eSleepDAC_NO	LITERAL1
+eSleepDAC_YES	LITERAL1
+eOPBITEN_DAC	LITERAL1
+eOPBITEN_MSB	LITERAL1
+eDIV2_2	LITERAL1
+eDIV2_1	LITERAL1
+eMODE_SIN	LITERAL1
+eMODE_TRI	LITERAL1
