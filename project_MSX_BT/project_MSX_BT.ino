@@ -259,7 +259,11 @@ void setup()
 
     if (Usb.Init() == -1) {
         Serial.print(F("\r\nOSC did not start"));
-        while (1); // Halt
+        while (1){
+            //Blink LED
+            ind_led_handler();
+            delay(500);
+        }; // Halt
     }
     pinMode( PIN_IND_LED, OUTPUT);
   
@@ -330,10 +334,10 @@ void loop()
         isDown  = ( PS4.getAnalogHat(LeftHatY) > 200 || PS4.getButtonPress(DOWN) );
         isLeft  = ( PS4.getAnalogHat(LeftHatX) < 50 || PS4.getButtonPress(LEFT) );
         isRight = ( PS4.getAnalogHat(LeftHatX) > 200 || PS4.getButtonPress(RIGHT) );
-        isA = ( PS4.getButtonPress(SQUARE));
-        isB = ( PS4.getButtonPress(TRIANGLE));
-        isC = ( PS4.getButtonPress(CROSS));
-        isD = ( PS4.getButtonPress(CIRCLE));
+        isA = ( PS4.getButtonPress(CROSS));
+        isB = ( PS4.getButtonPress(CIRCLE));
+        isC = ( PS4.getButtonPress(SQUARE));
+        isD = ( PS4.getButtonPress(TRIANGLE));
         isE = ( PS4.getButtonPress(L1) );
         isF = ( PS4.getButtonPress(R1) );
         isStart  = ( PS4.getButtonPress(OPTIONS) );
