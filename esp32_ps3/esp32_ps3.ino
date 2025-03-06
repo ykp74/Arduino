@@ -187,7 +187,6 @@ void notify()
         else if( battery == ps3_status_battery_shutdown ) Serial.println("SHUTDOWN");
         else Serial.println("UNDEFINED");
     }
-
 }
 
 void onConnect(){
