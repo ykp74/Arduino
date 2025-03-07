@@ -1,5 +1,11 @@
 #include <Ps3Controller.h>
 
+#define LED_BUILTIN 2  // 내장 LED (GPIO 2)
+#define BUZZER_PIN 5  // 피에조 부저 연결 핀
+
+int melody[] = {262, 294, 330, 349, 392, 440, 494, 523};
+int duration = 200; // 각 음의 지속 시간 (ms)
+
 int player = 0;
 int battery = 0;
 
@@ -111,7 +117,7 @@ void notify()
        Serial.print(" y="); Serial.print(Ps3.data.analog.stick.ry, DEC);
        Serial.println();
    }
-
+#if 0
    //--------------- Analog D-pad button events ----------------
    if( abs(Ps3.event.analog_changed.button.up) ){
        Serial.print("Pressing the up button: ");
@@ -174,7 +180,7 @@ void notify()
        Serial.print("Pressing the square button: ");
        Serial.println(Ps3.data.analog.button.square, DEC);
    }
-
+#endif
    //---------------------- Battery events ---------------------
     if( battery != Ps3.data.status.battery ){
         battery = Ps3.data.status.battery;
@@ -197,9 +203,20 @@ void setup()
 {
     Serial.begin(115200);
 
+    pinMode(LED_BUILTIN, OUTPUT); // 내장 LED 출력 설정
+    pinMode(BUZZER_PIN, OUTPUT); // 부저 출력 설정
+    digitalWrite(LED_BUILTIN, HIGH);
+
     Ps3.attach(notify);
     Ps3.attachOnConnect(onConnect);
     Ps3.begin("00:1a:80:34:ea:14");
+
+    // 멜로디 연주
+    for (int i = 0; i < 8; i++) {
+        tone(BUZZER_PIN, melody[i], duration);
+        delay(duration + 50); // 소리가 끝난 후 잠시 대기
+    }
+    noTone(BUZZER_PIN); // 부저 끄기
 
     Serial.println("Ready.");
 }
