@@ -6,18 +6,18 @@
 //definition
 //#define DEBUG
 
-#define VERSION         "KSND Multi Key Shield FW V1.4 (2024/01/03)"
+#define VERSION         "KSND Multi Key Shield FW V1.5 (2025/04/02)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
 #define debounceTime    50
 
-#define KEY_0   8
-#define KEY_1   9
-#define KEY_2   10
-#define KEY_3   11
+#define KEY_0       8
+#define KEY_1       9
+#define KEY_2       10
+#define KEY_3       11
 
 // Indicator
-#define LED1    6
+#define LED1         6
 #define LED_STANDBY  13
 
 long last_time_ms = 0; 
@@ -25,20 +25,22 @@ long current_time_ms;
 boolean is_first_push = false;
 
 //Key_0 Review comment
-const char key0_sen0[] = "I Checked the completion of the basic test from the person in charge.";
-const char key0_sen1[] = "It seems to be no problem when checking the change list.";
-const char key0_sen2[] = "Approved.";
+const char key0_sen0[] = "I Checked the completion of the basic test from the person in charge.\nIt seems to be no problem when checking the change list.\nApproved.";
+//const char key0_sen0[] = "I Checked the completion of the basic test from the person in charge.";
+//const char key0_sen1[] = "It seems to be no problem when checking the change list.";
+//const char key0_sen2[] = "Approved.";
 
 //Key_1 Review Feedback comment
 const char key1_sen0[] = "flqbgkduTtmqslek."; //reviewed for hangle
 
 //Key_2 primary Password
-//const char key2_sen0[] = "00153pyk*";  //password_1
 const char key2_sen0[] = "00153Pykk*";  //password_1 대문자 추가
+//const char key2_sen0[] = "00153pyk*";  //password_1
 
 //Key_3 secondary Password
-//const char key3_sen0[] = "yykp0153*";  //password_2
 const char key3_sen0[] = "Yykp01533*";  //password_2 대문자 추가
+//const char key3_sen0[] = "yykp0153*";  //password_2
+//const char key3_sen0[] = "qlqjs0153*";   //비번0153*
 
 enum key_state {
     KEY_NONE,
@@ -81,8 +83,8 @@ int key_input_check(void)
                     Serial.println("KEY_PUSH_0!!");
 #endif
                     Keyboard.println(key0_sen0);
-                    Keyboard.println(key0_sen1);
-                    Keyboard.print(key0_sen2);
+                    //Keyboard.println(key0_sen1);
+                    //Keyboard.print(key0_sen2);
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;     
                 }
