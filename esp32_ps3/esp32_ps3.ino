@@ -1,10 +1,10 @@
 #include <Ps3Controller.h>
 
-#define LED_BUILTIN 2  // 내장 LED (GPIO 2)
-#define BUZZER_PIN 5  // 피에조 부저 연결 핀
+#define LED_BUILTIN 2   // 내장 LED (GPIO 2)
+#define BUZZER_PIN 5    // 피에조 부저 연결 핀
 
 int melody[] = {262, 294, 330, 349, 392, 440, 494, 523};
-int duration = 200; // 각 음의 지속 시간 (ms)
+int duration = 200;     // 각 음의 지속 시간 (ms)
 
 int player = 0;
 int battery = 0;
@@ -203,8 +203,8 @@ void setup()
 {
     Serial.begin(115200);
 
-    pinMode(LED_BUILTIN, OUTPUT); // 내장 LED 출력 설정
-    pinMode(BUZZER_PIN, OUTPUT); // 부저 출력 설정
+    pinMode(LED_BUILTIN, OUTPUT);   // 내장 LED 출력 설정
+    pinMode(BUZZER_PIN, OUTPUT);    // 부저 출력 설정
     digitalWrite(LED_BUILTIN, HIGH);
 
     Ps3.attach(notify);
@@ -214,9 +214,9 @@ void setup()
     // 멜로디 연주
     for (int i = 0; i < 8; i++) {
         tone(BUZZER_PIN, melody[i], duration);
-        delay(duration + 50); // 소리가 끝난 후 잠시 대기
+        delay(duration + 50);   // 소리가 끝난 후 잠시 대기
     }
-    noTone(BUZZER_PIN); // 부저 끄기
+    noTone(BUZZER_PIN);         // 부저 끄기
 
     Serial.println("Ready.");
 }
@@ -227,13 +227,15 @@ void loop()
         return;
 
     //-------------------- Player LEDs -------------------
-    Serial.print("Setting LEDs to player "); Serial.println(player, DEC);
+    Serial.print("Setting LEDs to player "); 
+    Serial.println(player, DEC);
     Ps3.setPlayer(player);
 
     player += 1;
+
     if(player > 10) player = 0;
 
-
+#if 0
     //------ Digital cross/square/triangle/circle buttons ------
     if( Ps3.data.button.cross && Ps3.data.button.down )
         Serial.println("Pressing both the down and cross buttons");
@@ -252,6 +254,7 @@ void loop()
         Serial.println("Pressing both the left and right stick buttons");
     if( Ps3.data.button.select && Ps3.data.button.start )
         Serial.println("Pressing both the select and start buttons");
+#endif
 
     delay(2000);
 }

@@ -4,7 +4,7 @@
  send me an e-mail:  kristianl@tkjelectronics.com
  */
 #define FEATURE_PS4
-#define _DEBUG_LOG
+//#define _DEBUG_LOG
 
 #ifdef FEATURE_PS4
 #include <PS4BT.h>
@@ -30,12 +30,13 @@ BTD Btd(&Usb);
 // This will start an inquiry and then pair with the PS4 controller - you only have to do this once
 // You will need to hold down the PS and Share button at the same time, 
 // the PS4 controller will then start to blink rapidly indicating that it is in pairing mode
-//PS4BT PS4(&Btd, PAIR);
+PS4BT PS4(&Btd, PAIR);
 // After that you can simply create the instance like so and then press the PS button on the device
-PS4BT PS4(&Btd);
+//PS4BT PS4(&Btd);
 #else
 /* You can create the instance of the class in two ways */
-PS3BT PS3(&Btd, 0x00, 0x15, 0x83, 0x3D, 0x0A, 0x57); 
+//PS3BT PS3(&Btd, 0x00, 0x15, 0x83, 0x3D, 0x0A, 0x57);
+PS3BT PS3(&Btd, 0x00, 0x1a, 0x80, 0x34, 0xea, 0x14);
 // This will also store the bluetooth address - this can be obtained from the dongle when running the sketch
 #endif /* FEATURE_PS4 */
 
@@ -208,29 +209,33 @@ void setup() {
 
 void loop() 
 {
-  Usb.Task();
+    Usb.Task();
 
+#ifdef _DEBUG_LOG
 #ifdef FEATURE_PS4
-  if (PS4.connected()) {
-    if (PS4.getAnalogHat(RightHatX) > 137 || PS4.getAnalogHat(RightHatX) < 117 || PS4.getAnalogHat(RightHatY) > 137 || PS4.getAnalogHat(RightHatY) < 117) {
-        if (PS4.connected()) {}
-            Serial.print(F("\r\nRightHatX: "));
-            Serial.print(PS4.getAnalogHat(RightHatX));
-            Serial.print(F("\tRightHatY: "));
-            Serial.print(PS4.getAnalogHat(RightHatY));
+    if (PS4.connected()) {
+        if (PS4.getAnalogHat(RightHatX) > 137 || PS4.getAnalogHat(RightHatX) < 117 || PS4.getAnalogHat(RightHatY) > 137 || PS4.getAnalogHat(RightHatY) < 117) {
+            if (PS4.connected()) {
+                Serial.print(F("\r\nRightHatX: "));
+                Serial.print(PS4.getAnalogHat(RightHatX));
+                Serial.print(F("\tRightHatY: "));
+                Serial.print(PS4.getAnalogHat(RightHatY));
+            }
         }
-  }
+    }
 #else
-  if (PS3.PS3Connected || PS3.PS3NavigationConnected){
-    if(PS3.getAnalogHat(RightHatX) > 145 || PS3.getAnalogHat(RightHatX) < 110 || PS3.getAnalogHat(RightHatY) > 145 || PS3.getAnalogHat(RightHatY) < 110) {
-        if( PS3.PS3Connected) { // The Navigation controller only have one joystick
-            Serial.print(F("\r\nRightHatX: "));
-            Serial.print(PS3.getAnalogHat(RightHatX));
-            Serial.print(F("\tRightHatY: "));
-            Serial.print(PS3.getAnalogHat(RightHatY));
+    if (PS3.PS3Connected || PS3.PS3NavigationConnected){
+        if(PS3.getAnalogHat(RightHatX) > 145 || PS3.getAnalogHat(RightHatX) < 110 || PS3.getAnalogHat(RightHatY) > 145 || PS3.getAnalogHat(RightHatY) < 110) {
+            if( PS3.PS3Connected) { // The Navigation controller only have one joystick
+                Serial.print(F("\r\nRightHatX: "));
+                Serial.print(PS3.getAnalogHat(RightHatX));
+                Serial.print(F("\tRightHatY: "));
+                Serial.print(PS3.getAnalogHat(RightHatY));
+            }
         }
     }
 #endif
+#endif //_DEBUG_LOG
 
 #ifdef FEATURE_PS4
     // Analog button values can be read from almost all buttons
