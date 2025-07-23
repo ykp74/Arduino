@@ -15,8 +15,8 @@ LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars
 
 TM1651 Display(CLK,DIO);
 
-#define B_STOP  A0 /* breif Macro for the debounced NEXT pin, with pull-up */
-#define B_NEXT  A1 /* breif Macro for the debounced STOP pin, with pull-up */
+#define B_NEXT  A0 /* breif Macro for the debounced NEXT pin, with pull-up */
+#define B_STOP  A1 /* breif Macro for the debounced STOP pin, with pull-up */
 #define B_PLAY  A2 /* breif Macro for the debounced PLAY pin, with pull-up */
 
 /**
@@ -43,6 +43,7 @@ Bounce b_Play  = Bounce();
  */
 uint8_t current_track = 1;
 uint8_t result;
+uint8_t cnt = 0;
 
 //////////////////////////////////////////////////////////////////////////////////
 #define MAX_NODE 30
@@ -57,6 +58,13 @@ struct NODE {
 NODE node[MAX_NODE];
 NODE* head;
 NODE* currNode;
+
+struct _status {
+    uint8_t num_files = 0;
+    bool isPlayback = false;
+};
+
+_status status;
 
 void initNode(void){
     current_track = 1;
@@ -116,13 +124,19 @@ void printLCDScreen(int line, char* string){
 ////////////////////////////////////////////////////////////////////////////////
 
 void getFileName(void) {
-    SdFile file;
+    FatFile file;
+    FatFile dir;
     char filename[13];
-    
-    Serial.println(F("Music Files found :"));
-    sd.chdir("/",true);
 
-    while (file.openNext(sd.vwd(),O_READ)){
+    if (!dir.open("/")) {
+        Serial.println("디렉터리 열기 실패");
+        return;
+    }
+
+    Serial.println(F("Music Files found :"));
+    sd.chdir("/");
+
+    while (file.openNext(&dir,O_READ)){
         file.getName(filename, sizeof(filename));
         if ( isFnMusic(filename) ) {
           addNode2Tail(filename);
@@ -139,7 +153,16 @@ void getFileName(void) {
 
 void timerIsr(void) {
     // Toggle LED
-    digitalWrite( 5, digitalRead( 5 ) ^ 1 );
+    //digitalWrite( 13, digitalRead( 13 ) ^ 1 );
+    if(!status.isPlayback){
+        return;
+    }
+
+    cnt++;
+    if(cnt > 0xf){
+        cnt = 0;
+    }
+    Display.displayNum(0,cnt);
 }
 
 void displayNumbers(uint8_t count) {
@@ -209,9 +232,9 @@ void setup() {
     //Display.displayNum(2,current_track);
 
     // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
-    Timer1.initialize(500000); 
-    Timer1.attachInterrupt( timerIsr ); // attach the service routine here
-}
+    Timer1.initialize(100000); 
+    Timer1.attachInterrupt(timerIsr); // ISR 연결
+} 
 
 /**
  * \brief Main Loop the Arduino Chip
@@ -245,20 +268,27 @@ void loop()
                 Display.displayNum(0,0xe);
                 displayNumbers(current_track);
                 //Display.displayNum(2,current_track);
-                
+               
                 result = MP3player.playMP3(node[current_track].file_name, 0);
                 //result = MP3player.playTrack(current_track);
                 
                 if( result != 0 ){
-                    Serial.print(F("Playback Error !!! : "));  Serial.println(result);     
+                    Serial.print(F("Playback Error !!! : "));  Serial.println(result); 
+                    status.isPlayback = false;
+                } else {
+                    status.isPlayback = true;
                 }
             } else {
                 /* Pause or Resume status */
                 if( MP3player.getState()!= paused_playback && MP3player.getState() != uninitialized){
                     Serial.println(F("PAUSE"));
+                    status.isPlayback = false;
+
                     MP3player.pauseMusic(); 
                 } else {
                     Serial.println(F("RESUME"));
+                    status.isPlayback = true;
+
                     MP3player.resumeMusic(); 
                 }
             }
@@ -281,14 +311,17 @@ void loop()
                 MP3player.getState() != paused_playback && 
                 MP3player.getState() != uninitialized){
               /* No Playback status */
-              Display.displayNum(0,0xb);
+              Display.displayNum(0,0x5);
             } else {
                 Display.displayNum(0,0xe);  
                 MP3player.stopTrack();
                 result = MP3player.playMP3(node[current_track].file_name, 0);
                 if( result != 0 ){
                     Serial.print(F("Playback Error !!! : ")); Serial.println(result);
-                }       
+                    status.isPlayback = false;
+                } else {
+                    status.isPlayback = true;
+                }
             }
         }
     }
@@ -297,7 +330,8 @@ void loop()
         if (b_Stop.read() == HIGH)	{
             Serial.print(F("B_STOP pressed ALL Stop!"));  Serial.println(current_track);
             /* No Playback status */
-            Display.displayNum(0,0xb);
+            Display.displayNum(0,0x5);
+            status.isPlayback = false;
             MP3player.stopTrack();
         }
     }
