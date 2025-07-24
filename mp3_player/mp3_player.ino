@@ -65,7 +65,8 @@ struct _status {
 
 _status status;
 
-void initNode(void){
+void initNode(void)
+{
     current_track = 1;
     node_cnt = 0;
  
@@ -73,11 +74,13 @@ void initNode(void){
     Serial.println(F("initNode"));
 }
 
-NODE* getNode(void){
+NODE* getNode(void)
+{
     return &node[node_cnt++];
 }
 
-void addNode2Tail(char* fileName){
+void addNode2Tail(char* fileName)
+{
   for(currNode=head; currNode != NULL; currNode=currNode->next){
       if(currNode->next == NULL ){
         NODE* newNode = getNode();
@@ -91,7 +94,8 @@ void addNode2Tail(char* fileName){
   }
 }
 
-int8_t getPlayNextNodeCnt(void){
+int8_t getPlayNextNodeCnt(void)
+{
     current_track++;
     if(current_track == node_cnt){
         current_track = 1;
@@ -112,7 +116,8 @@ void printNode(void){
 #endif /* FEATURE_DEBUG_PRINT */
 
 #ifdef FEATURE_LCD
-void printLCDScreen(int line, char* string){
+void printLCDScreen(int line, char* string)
+{
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Play File Name:");
@@ -122,7 +127,8 @@ void printLCDScreen(int line, char* string){
 #endif /* FEATURE_LCD */
 ////////////////////////////////////////////////////////////////////////////////
 
-void getFileName(void) {
+void getFileName(void) 
+{
     FatFile file;
     FatFile dir;
     char filename[13];
@@ -150,7 +156,8 @@ void getFileName(void) {
     Serial.println( node_cnt-1 );  //Total files count
 }
 
-void timerIsr(void) {
+void timerIsr(void)
+{
     // Toggle LED
     //digitalWrite( 13, digitalRead( 13 ) ^ 1 );
     if(!status.isPlayback){
@@ -164,8 +171,8 @@ void timerIsr(void) {
     Display.displayNum(0,cnt);
 }
 
-void displayNumbers(uint8_t count) {
-
+void displayNumbers(uint8_t count)
+{
     uint8_t dec = count / 10;
     uint8_t cnt = count % 10;
 
@@ -179,7 +186,8 @@ void displayNumbers(uint8_t count) {
  * After Arduino's kernel has booted initialize basic features for this
  * application, such as Serial port and MP3player objects with .begin.
  */
-void setup() {
+void setup()
+{
     uint8_t result = 0;
 
     Serial.begin(115200);
