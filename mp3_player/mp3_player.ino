@@ -42,7 +42,6 @@ Bounce b_Play  = Bounce();
  * \brief Index of the current track playing.
  */
 uint8_t current_track = 1;
-uint8_t result;
 uint8_t cnt = 0;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -129,12 +128,12 @@ void getFileName(void) {
     char filename[13];
 
     if (!dir.open("/")) {
-        Serial.println("디렉터리 열기 실패");
+        Serial.println(F("디렉터리 열기 실패"));
         return;
     }
 
     Serial.println(F("Music Files found :"));
-    sd.chdir("/");
+    sd.chdir("/");  // 루트 디렉터리로 이동
 
     while (file.openNext(&dir,O_READ)){
         file.getName(filename, sizeof(filename));
@@ -181,6 +180,8 @@ void displayNumbers(uint8_t count) {
  * application, such as Serial port and MP3player objects with .begin.
  */
 void setup() {
+    uint8_t result = 0;
+
     Serial.begin(115200);
 
     pinMode(B_NEXT, INPUT);   //INPUT_PULLUP
@@ -247,6 +248,8 @@ void setup() {
  */
 void loop() 
 {
+    uint8_t result = 0;
+
 // Below is only needed if not interrupt driven. Safe to remove if not using.
 #if defined(USE_MP3_REFILL_MEANS) \
     && ( (USE_MP3_REFILL_MEANS == USE_MP3_SimpleTimer) \
@@ -257,11 +260,11 @@ void loop()
 
     if( b_Play.update()) {
         if( b_Play.read() == HIGH ) {
-            Serial.print(F("B_PLAY pressed #"));
+            Serial.print(F("B_PLAY pressed # "));
             if( MP3player.getState() != playback && 
                 MP3player.getState() != paused_playback && 
                 MP3player.getState() != uninitialized) {
-                Serial.print(current_track); Serial.println(node[current_track].file_name);
+                Serial.print(current_track); Serial.print(F(" ")); Serial.println(node[current_track].file_name);
 #ifdef FEATURE_LCD
                 printLCDScreen(1,node[current_track].file_name);
 #endif
@@ -282,14 +285,12 @@ void loop()
                 /* Pause or Resume status */
                 if( MP3player.getState()!= paused_playback && MP3player.getState() != uninitialized){
                     Serial.println(F("PAUSE"));
-                    status.isPlayback = false;
-
                     MP3player.pauseMusic(); 
+                    status.isPlayback = false;
                 } else {
                     Serial.println(F("RESUME"));
-                    status.isPlayback = true;
-
                     MP3player.resumeMusic(); 
+                    status.isPlayback = true;
                 }
             }
         }
@@ -298,7 +299,7 @@ void loop()
     if( b_Next.update()) {
         if( b_Next.read() == HIGH ) {
             getPlayNextNodeCnt();
-            Serial.print(F("B_NEXT pressed #")); Serial.print(current_track);  
+            Serial.print(F("B_NEXT pressed # ")); Serial.print(current_track);  Serial.print(F(" "));
             Serial.println(node[current_track].file_name);
 
 #ifdef FEATURE_LCD
@@ -315,6 +316,7 @@ void loop()
             } else {
                 Display.displayNum(0,0xe);  
                 MP3player.stopTrack();
+                delay(100);
                 result = MP3player.playMP3(node[current_track].file_name, 0);
                 if( result != 0 ){
                     Serial.print(F("Playback Error !!! : ")); Serial.println(result);
@@ -328,11 +330,12 @@ void loop()
 
     if (b_Stop.update()) {
         if (b_Stop.read() == HIGH)	{
-            Serial.print(F("B_STOP pressed ALL Stop!"));  Serial.println(current_track);
+            Serial.print(F("B_STOP pressed ALL Stop! # "));  Serial.print(current_track); Serial.print(F(" "));
+            Serial.println(node[current_track].file_name);
             /* No Playback status */
             Display.displayNum(0,0x5);
-            status.isPlayback = false;
             MP3player.stopTrack();
+            status.isPlayback = false;
         }
     }
 }
