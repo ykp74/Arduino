@@ -70,6 +70,9 @@ const int PIN_START   = 38;
 const int PIN_CREDIT  = 39;
 #endif
 
+// ISR → 메인루프 전달 플래그
+volatile bool bat_check_due = false;
+
 volatile bool isUp, isDown, isLeft, isRight; 
 volatile bool isA, isB, isC, isD, isE, isF;
 volatile bool isStart, isSelect;
@@ -79,24 +82,35 @@ int bat_level = 0;
 
 void get_BatLevel_handler(void)
 {
-    int batLvl = PS4.getBatteryLevel();
+    // ISR에서는 가벼운 작업만 수행: 플래그 설정
+    bat_check_due = true;
+}
 
-    if( bat_level != batLvl){
+static inline void updateBatteryStatusIfDue()
+{
+#ifdef SUPPORT_PS4
+    if (!bat_check_due || !PS4.connected()) {
+        return;
+    }
+    bat_check_due = false;
+
+    const int batLvl = PS4.getBatteryLevel();
+    if (bat_level != batLvl) {
         bat_level = batLvl;
-    
-        if( bat_level > 8 ){
+        if (bat_level > 8) {
             PS4.setLed(Blue);
-        } else if( bat_level > 6 ){
+        } else if (bat_level > 6) {
             PS4.setLed(Green);
-        } else if( bat_level > 4 ){
+        } else if (bat_level > 4) {
             PS4.setLed(Yellow);
         } else {
             PS4.setLed(Red);
-        } 
+        }
     }
 #ifdef _DEBUG
     Serial.print("get_BatLevel_handler : ");
-    Serial.println(batLvl);
+    Serial.println(bat_level);
+#endif
 #endif
 }
 
@@ -318,6 +332,9 @@ void setup()
 void loop()
 {
     Usb.Task();
+
+    // 주기적 배터리 LED 업데이트 (ISR 플래그 기반)
+    updateBatteryStatusIfDue();
 
 #ifdef SUPPORT_PS4
     if(PS4.connected()){ 
