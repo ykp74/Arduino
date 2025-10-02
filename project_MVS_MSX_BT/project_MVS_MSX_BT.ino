@@ -12,8 +12,8 @@
 
 // Satisfy the IDE, which needs to see the include statment in the ino too.
 #ifdef dobogusinclude
-# include <spi4teensy3.h>
-# include <SPI.h>
+#include <spi4teensy3.h>
+#include <SPI.h>
 #endif
 
 // #include "TM1651.h"
@@ -33,6 +33,7 @@ BTD Btd(&Usb); // You have to create the Bluetooth Dongle instance like so
 // This will start an inquiry and then pair with the PS4 controller - you only have to do this once
 // You will need to hold down the PS and Share button at the same time, the PS4 controller will then start to blink rapidly indicating that it is in pairing mode
 PS4BT PS4(&Btd, PAIR);
+
 // After that you can simply create the instance like so and then press the PS button on the device
 //PS4BT PS4(&Btd);
 #endif
@@ -124,7 +125,7 @@ void ind_led_eable(bool enable)
 {
     static boolean isOn = false;
 
-    if(enable == true){
+    if(enable){
         if(!isOn){
             isOn = true;
             digitalWrite( PIN_IND_LED, enable );
@@ -279,8 +280,11 @@ void setup()
             delay(500);
         }; // Halt
     }
+
+    //Init Indicator LED
     pinMode( PIN_IND_LED, OUTPUT);
-  
+    digitalWrite( PIN_IND_LED, LOW);
+
     // usage define
     pinMode( PIN_UP,     INPUT);
     pinMode( PIN_DOWN,   INPUT);
@@ -296,8 +300,7 @@ void setup()
     pinMode( PIN_START,  INPUT);
     pinMode( PIN_CREDIT, INPUT);
 #endif
-    digitalWrite( PIN_IND_LED, LOW);
-
+#if 0  //No need
     // initialize
     digitalWrite(PIN_UP,    LOW);
     digitalWrite(PIN_DOWN,  LOW);
@@ -313,7 +316,7 @@ void setup()
     digitalWrite(PIN_START, LOW);
     digitalWrite(PIN_CREDIT,LOW);
 #endif
-
+#endif
     isUp = isDown = isLeft = isRight = false;
     isA = isB = isC = isD = isE = isF = false;
 
@@ -323,10 +326,10 @@ void setup()
     // Display.displaySet(2);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
     // Display.displayNum(0,0);
 
-    Serial.print(F("\r\nPS4 Bluetooth Library Started"));
     ind_led_eable(true);
     delay(1000); // 1000ms(1초) 대기
     ind_led_eable(false);
+    Serial.print(F("\r\nPS4 Bluetooth Library Started"));
 }
 
 void loop()
@@ -338,9 +341,9 @@ void loop()
 
 #ifdef SUPPORT_PS4
     if(PS4.connected()){ 
+        //Connect PS4 Controller
         if (!isConnected) {
           isConnected = true;
-          //Connect PS4 Controller
           ind_led_eable(true);
         }
 
@@ -351,6 +354,7 @@ void loop()
         isDown  = ( PS4.getAnalogHat(LeftHatY) > 200 || PS4.getButtonPress(DOWN) );
         isLeft  = ( PS4.getAnalogHat(LeftHatX) < 50 || PS4.getButtonPress(LEFT) );
         isRight = ( PS4.getAnalogHat(LeftHatX) > 200 || PS4.getButtonPress(RIGHT) );
+
         isA = ( PS4.getButtonPress(CROSS));
         isB = ( PS4.getButtonPress(CIRCLE));
         isC = ( PS4.getButtonPress(SQUARE));
@@ -381,6 +385,7 @@ void loop()
         //Disconnect PS4 Controller
         if (isConnected) {
             isConnected = false;
+            bat_check_due = false;
             Serial.println("PS4 컨트롤러 연결이 해제되었습니다!");
             ind_led_eable(false);
         }
