@@ -5,8 +5,9 @@
 
 //definition
 //#define DEBUG
+//#define _KEY3
 
-#define VERSION         "KSND Multi Key Shield FW V1.4 (2024/01/03)"
+#define VERSION         "KSND Multi Key Shield FW V1.5 (2026/01/05)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
 #define debounceTime    50
@@ -15,6 +16,7 @@
 #define KEY_1   9
 #define KEY_2   10
 #define KEY_3   11
+#define KEY_4   11  //Share
 
 // Indicator
 #define LED1    6
@@ -40,6 +42,9 @@ const char key2_sen0[] = "00153Pykk*";  //password_1 대문자 추가
 //const char key3_sen0[] = "yykp0153*";  //password_2
 const char key3_sen0[] = "Yykp01533*";  //password_2 대문자 추가
 
+//Key_4 Third Password
+const char key4_sen0[] = "Yykp01533.";  //password_3
+
 enum key_state {
     KEY_NONE,
     KEY_PUSH_0,
@@ -50,6 +55,8 @@ enum key_state {
     KEY_RELEASE_2,
     KEY_PUSH_3,
     KEY_RELEASE_3,
+    KEY_PUSH_4,
+    KEY_RELEASE_4,
     KEY_MAX
 };
 
@@ -120,6 +127,7 @@ int key_input_check(void)
                     is_first_push = false;   
                 }
             }
+#if _KEY3
             else if(PUSH(KEY_3)){   //Key_3 Password 2
                 current_time_ms = millis();
                 if(!is_first_push){
@@ -136,7 +144,26 @@ int key_input_check(void)
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;
                 }
-            } else {
+            }
+#endif 
+            else if(PUSH(KEY_4)){   //Key_4 Password 3
+                current_time_ms = millis();
+                if(!is_first_push){
+                    is_first_push = true;
+                    last_time_ms = current_time_ms;
+                }
+                if((current_time_ms - last_time_ms) > debounceTime){
+                    key.state = KEY_PUSH_4;
+#ifdef DEBUG 
+                    Serial.println("KEY_PUSH_4!!");
+#endif
+                    Keyboard.print(key4_sen0);
+                    //Keyboard.println(key3_sen0); //Enter Key Event                 
+                    digitalWrite( LED1, HIGH );
+                    is_first_push = false;
+                }
+            } 
+            else {
                 is_first_push = false; 
             }
             break;
@@ -167,7 +194,7 @@ int key_input_check(void)
 #endif
             }
             break;
-
+#if _KEY3
         case KEY_PUSH_3:
             if(RELEASE(KEY_3)){
                 key.state = KEY_RELEASE_3;
@@ -181,11 +208,28 @@ int key_input_check(void)
                 key.isPushed = true;
             }
             break;
+#endif
+        case KEY_PUSH_4:
+            if(RELEASE(KEY_4)){
+                key.state = KEY_RELEASE_4;
+#ifdef DEBUG            
+                Serial.println("KEY_RELEASE_4!!");
+#endif
+            }
+            //Display version 
+            if(PUSH(KEY_2) && !key.isPushed){
+                Keyboard.println(VERSION);
+                key.isPushed = true;
+            }
+            break;
 
         case KEY_RELEASE_0:
         case KEY_RELEASE_1:
         case KEY_RELEASE_2:
+#if _KEY3
         case KEY_RELEASE_3:
+#endif
+        case KEY_RELEASE_4:
             digitalWrite( LED1, LOW );
             is_first_push = false;
             key.isPushed = false;
