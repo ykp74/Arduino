@@ -10,7 +10,8 @@
 #define VERSION         "KSND Multi Key Shield FW V1.5 (2026/01/05)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
-#define debounceTime    50
+#define DEBOUNCE_TIME_MS    50UL
+#define STANDBY_BLINK_MS    500UL
 
 #define KEY_0   8
 #define KEY_1   9
@@ -22,8 +23,9 @@
 #define LED1    6
 #define LED_STANDBY  13
 
-long last_time_ms = 0; 
-long current_time_ms;
+unsigned long last_time_ms = 0; 
+unsigned long current_time_ms;
+unsigned long standby_last_toggle_ms = 0;
 boolean is_first_push = false;
 
 //Key_0 Review comment
@@ -65,6 +67,15 @@ struct _keyboard {
     boolean isPushed = false;
 } key;
 
+void updateStandbyLed(void)
+{
+    unsigned long now = millis();
+    if ((now - standby_last_toggle_ms) >= STANDBY_BLINK_MS) {
+        standby_last_toggle_ms = now;
+        digitalWrite(LED_STANDBY, !digitalRead(LED_STANDBY));
+    }
+}
+
 void timerIsr(void) {
     // Toggle Monitoring LED
     digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
@@ -82,7 +93,7 @@ int key_input_check(void)
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
-                if((current_time_ms - last_time_ms) > debounceTime){
+                if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_0;
 #ifdef DEBUG 
                     Serial.println("KEY_PUSH_0!!");
@@ -100,7 +111,7 @@ int key_input_check(void)
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
-                if((current_time_ms - last_time_ms) > debounceTime){
+                if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_1;
 #ifdef DEBUG 
                     Serial.println("KEY_PUSH_1!!");
@@ -116,7 +127,7 @@ int key_input_check(void)
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
-                if((current_time_ms - last_time_ms) > debounceTime){
+                if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_2;
 #ifdef DEBUG 
                     Serial.println("KEY_PUSH_2!!");
@@ -134,7 +145,7 @@ int key_input_check(void)
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
-                if((current_time_ms - last_time_ms) > debounceTime){
+                if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_3;
 #ifdef DEBUG 
                     Serial.println("KEY_PUSH_3!!");
@@ -152,7 +163,7 @@ int key_input_check(void)
                     is_first_push = true;
                     last_time_ms = current_time_ms;
                 }
-                if((current_time_ms - last_time_ms) > debounceTime){
+                if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_4;
 #ifdef DEBUG 
                     Serial.println("KEY_PUSH_4!!");
@@ -263,10 +274,12 @@ void setup()
     //Mouse.begin();
     Keyboard.begin();
     
+    digitalWrite(LED1, LOW);
+    digitalWrite(LED_STANDBY, LOW);
+
     // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
-    //Timer1.initialize(500000); 
-    Timer1.initialize(1000000); 
-    Timer1.attachInterrupt( timerIsr ); // attach the service routine here
+    //Timer1.initialize(1000000); 
+    //Timer1.attachInterrupt( timerIsr ); // attach the service routine here
 #ifdef DEBUG
     Serial.println("Boot Done!!");
 #endif /* DEBUG */
@@ -274,5 +287,6 @@ void setup()
 
 void loop()
 {
+    updateStandbyLed();
     key_input_check();
 }
