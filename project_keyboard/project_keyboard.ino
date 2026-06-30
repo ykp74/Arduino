@@ -4,10 +4,10 @@
 #include <TimerOne.h>
 
 //definition
-//#define DEBUG
-//#define _KEY3
+//#define _DEBUG
+#define _KEY3
 
-#define VERSION         "KSND Multi Key Shield FW V1.5 (2026/01/05)"
+#define VERSION         "KSND Multi Key Shield FW V1.6 (2026/06/30)"
 #define PUSH(x)         digitalRead(x)==LOW 
 #define RELEASE(x)      digitalRead(x)==HIGH 
 #define DEBOUNCE_TIME_MS    50UL
@@ -32,7 +32,6 @@ boolean is_first_push = false;
 const char key0_sen0[] = "I Checked the completion of the basic test from the person in charge.";
 const char key0_sen1[] = "It seems to be no problem when checking the change list.";
 const char key0_sen2[] = "Approved.";
-
 //Key_1 Review Feedback comment
 const char key1_sen0[] = "flqbgkduTtmqslek."; //reviewed for hangle
 
@@ -40,12 +39,14 @@ const char key1_sen0[] = "flqbgkduTtmqslek."; //reviewed for hangle
 //const char key2_sen0[] = "00153pyk*";  //password_1
 const char key2_sen0[] = "00153Pykk*";  //password_1 대문자 추가
 
+#ifdef _KEY3
 //Key_3 secondary Password
 //const char key3_sen0[] = "yykp0153*";  //password_2
 const char key3_sen0[] = "Yykp01533*";  //password_2 대문자 추가
-
+#else
 //Key_4 Third Password
 const char key4_sen0[] = "Yykp01533.";  //password_3
+#endif /* _KEY3 */
 
 enum key_state {
     KEY_NONE,
@@ -55,10 +56,13 @@ enum key_state {
     KEY_RELEASE_1,
     KEY_PUSH_2,
     KEY_RELEASE_2,
+#ifdef _KEY3
     KEY_PUSH_3,
     KEY_RELEASE_3,
+#else
     KEY_PUSH_4,
     KEY_RELEASE_4,
+#endif /* _KEY3 */
     KEY_MAX
 };
 
@@ -67,23 +71,25 @@ struct _keyboard {
     boolean isPushed = false;
 } key;
 
-void updateStandbyLed(void)
+// void updateStandbyLed(void)
+// {
+//     unsigned long now = millis();
+
+//     if ((now - standby_last_toggle_ms) >= STANDBY_BLINK_MS) {
+//         standby_last_toggle_ms = now;
+//         digitalWrite(LED_STANDBY, !digitalRead(LED_STANDBY));
+//     }
+// }
+
+void timerIsr(void)
 {
-    unsigned long now = millis();
-    if ((now - standby_last_toggle_ms) >= STANDBY_BLINK_MS) {
-        standby_last_toggle_ms = now;
-        digitalWrite(LED_STANDBY, !digitalRead(LED_STANDBY));
-    }
-}
-
-void timerIsr(void) {
     // Toggle Monitoring LED
-    digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
-    delay(10);
-    digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
+    digitalWrite(LED_STANDBY, digitalRead(LED_STANDBY)^1 );
+    //delay(10);
+    //digitalWrite( LED_STANDBY, digitalRead( LED_STANDBY ) ^ 1 );
 }
 
-int key_input_check(void)
+void key_input_check(void)
 {
     switch(key.state){
         case KEY_NONE:
@@ -95,9 +101,9 @@ int key_input_check(void)
                 }
                 if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_0;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                     Serial.println("KEY_PUSH_0!!");
-#endif
+#endif /* _DEBUG */
                     Keyboard.println(key0_sen0);
                     Keyboard.println(key0_sen1);
                     Keyboard.print(key0_sen2);
@@ -113,9 +119,9 @@ int key_input_check(void)
                 }
                 if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_1;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                     Serial.println("KEY_PUSH_1!!");
-#endif
+#endif /* _DEBUG */
                     Keyboard.print(key1_sen0);
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;   
@@ -129,16 +135,16 @@ int key_input_check(void)
                 }
                 if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_2;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                     Serial.println("KEY_PUSH_2!!");
-#endif
+#endif /* _DEBUG */
                     Keyboard.print(key2_sen0);
                     //Keyboard.println(key2_sen0); //Enter Key Event
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;   
                 }
             }
-#if _KEY3
+#ifdef _KEY3
             else if(PUSH(KEY_3)){   //Key_3 Password 2
                 current_time_ms = millis();
                 if(!is_first_push){
@@ -147,16 +153,16 @@ int key_input_check(void)
                 }
                 if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_3;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                     Serial.println("KEY_PUSH_3!!");
-#endif
+#endif /* _DEBUG */
                     Keyboard.print(key3_sen0);
                     //Keyboard.println(key3_sen0); //Enter Key Event                 
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;
                 }
             }
-#endif 
+#else
             else if(PUSH(KEY_4)){   //Key_4 Password 3
                 current_time_ms = millis();
                 if(!is_first_push){
@@ -165,15 +171,16 @@ int key_input_check(void)
                 }
                 if((current_time_ms - last_time_ms) > DEBOUNCE_TIME_MS){
                     key.state = KEY_PUSH_4;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                     Serial.println("KEY_PUSH_4!!");
-#endif
+#endif /* _DEBUG */
                     Keyboard.print(key4_sen0);
                     //Keyboard.println(key3_sen0); //Enter Key Event                 
                     digitalWrite( LED1, HIGH );
                     is_first_push = false;
                 }
-            } 
+            }
+#endif /* _KEY3 */
             else {
                 is_first_push = false; 
             }
@@ -182,36 +189,36 @@ int key_input_check(void)
         case KEY_PUSH_0:
             if(RELEASE(KEY_0)){
                 key.state = KEY_RELEASE_0;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                 Serial.println("KEY_RELEASE_0!!");
-#endif
+#endif /* _DEBUG */
             }
             break;
 
         case KEY_PUSH_1:
             if(RELEASE(KEY_1)){
                 key.state = KEY_RELEASE_1;
-#ifdef DEBUG
+#ifdef _DEBUG
                 Serial.println("KEY_RELEASE_1!!");
-#endif
+#endif /* _DEBUG */
             }
             break;
 
         case KEY_PUSH_2:
             if(RELEASE(KEY_2)){
                 key.state = KEY_RELEASE_2;
-#ifdef DEBUG 
+#ifdef _DEBUG 
                 Serial.println("KEY_RELEASE_2!!");
-#endif
+#endif /* _DEBUG */
             }
             break;
-#if _KEY3
+#ifdef _KEY3
         case KEY_PUSH_3:
             if(RELEASE(KEY_3)){
                 key.state = KEY_RELEASE_3;
-#ifdef DEBUG            
+#ifdef _DEBUG            
                 Serial.println("KEY_RELEASE_3!!");
-#endif
+#endif /* _DEBUG */
             }
             //Display version 
             if(PUSH(KEY_2) && !key.isPushed){
@@ -219,13 +226,13 @@ int key_input_check(void)
                 key.isPushed = true;
             }
             break;
-#endif
+#else
         case KEY_PUSH_4:
             if(RELEASE(KEY_4)){
                 key.state = KEY_RELEASE_4;
-#ifdef DEBUG            
+#ifdef _DEBUG            
                 Serial.println("KEY_RELEASE_4!!");
-#endif
+#endif /* _DEBUG */
             }
             //Display version 
             if(PUSH(KEY_2) && !key.isPushed){
@@ -233,14 +240,15 @@ int key_input_check(void)
                 key.isPushed = true;
             }
             break;
-
+#endif /* _KEY3 */
         case KEY_RELEASE_0:
         case KEY_RELEASE_1:
         case KEY_RELEASE_2:
-#if _KEY3
+#ifdef _KEY3
         case KEY_RELEASE_3:
-#endif
+#else
         case KEY_RELEASE_4:
+#endif /* _KEY3 */
             digitalWrite( LED1, LOW );
             is_first_push = false;
             key.isPushed = false;
@@ -248,9 +256,9 @@ int key_input_check(void)
             break;
       
         default:
-#ifdef DEBUG            
+#ifdef _DEBUG            
             Serial.println("Invalid Keyboard Status!!!");
-#endif
+#endif /* _DEBUG */
             //Recover the status
             is_first_push = false;
             key.isPushed = false;
@@ -277,16 +285,17 @@ void setup()
     digitalWrite(LED1, LOW);
     digitalWrite(LED_STANDBY, LOW);
 
-    // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
-    //Timer1.initialize(1000000); 
-    //Timer1.attachInterrupt( timerIsr ); // attach the service routine here
-#ifdef DEBUG
+    // set a timer of length 100000 microseconds
+    // (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
+    Timer1.initialize(1000000); 
+    Timer1.attachInterrupt( timerIsr ); // attach the service routine here
+#ifdef _DEBUG
     Serial.println("Boot Done!!");
-#endif /* DEBUG */
+#endif /* _DEBUG */
 }
 
 void loop()
 {
-    updateStandbyLed();
+    //updateStandbyLed();
     key_input_check();
 }
