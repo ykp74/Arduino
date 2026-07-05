@@ -14,8 +14,8 @@
 #define SERIAL_SPEED    115200
 
 // Global --------------
-int pin_WData[4] = { A1, A3, A2, A0 };  //D0 D1 D2 D3
-int pin_RData[4] = { 6, 7, 8, 9 };      //Q0 Q1 Q2 Q3
+int pin_WData[4] = { A0, A1, A2, A3 };  //D1 D2 D3 D4
+int pin_RData[4] = { 6, 7, 8, 9 };      //Q1 Q2 Q3 Q4
 
 int pin_WAddr[2] = { 2, 3 };
 int pin_RAddr[2] = { 10, 12 };
@@ -151,6 +151,7 @@ byte Read670( byte addr )
     
     // cycle the pin to initiate the read
     digitalWrite( pin_RE, LOW );
+    delay(1);
     byte ret = Read( 4, pin_RData );
     digitalWrite( pin_RE, HIGH );
     
@@ -171,23 +172,22 @@ void setup() {
 #endif
 
     pinMode( pin_WE, OUTPUT );
+    digitalWrite( pin_WE, HIGH );
     pinMode( pin_WAddr[0], OUTPUT );
     pinMode( pin_WAddr[1], OUTPUT );
 
     pinMode( pin_RE, OUTPUT );
+    digitalWrite( pin_RE, HIGH );
     pinMode( pin_RAddr[0], OUTPUT );
     pinMode( pin_RAddr[1], OUTPUT );
 
     pinMode( pin_POWER, OUTPUT );
+    digitalWrite( pin_POWER, LOW );
 
     for( int i=0; i<4; i++ ){
         pinMode( pin_WData[i], OUTPUT );
-        pinMode( pin_RData[i], INPUT_PULLUP );
+        pinMode( pin_RData[i], INPUT );
     }
-
-    digitalWrite( pin_WE, HIGH );
-    digitalWrite( pin_RE, HIGH );
-    digitalWrite( pin_POWER, LOW );
 }
 
 void loop() {
@@ -197,13 +197,10 @@ void loop() {
     for(int a=0; a<4; a++){
         byte data;
         data = Read670(a);
-        DBG( "add : " );
-        DBG( a );
-        DBG( " data : " );
-        DBGHEXLN( data );
+        DBG( "add : " );  DBG( a );
+        DBG( " data : " );  DBGHEXLN( data );
     }
     DBGPAUSE();
-
 #if 0
     DBGLN("PHASE 1");
     // Store and check 2 different values in 4 addresses one address at a time. Total 8 checks for phase 1
@@ -220,7 +217,7 @@ void loop() {
             }
         }
     }
-
+#endif
     DBGLN("\nPHASE 2");
     // Store and check 16 different values in 4 addresses one address at a time. Total 64 checks for phase 2
     for( int a=0; a<4; a++ ){
@@ -237,7 +234,7 @@ void loop() {
             }
         }
     }
-#endif
+
     DBGLN("\nCompleted");
     DBGPAUSE();
 }

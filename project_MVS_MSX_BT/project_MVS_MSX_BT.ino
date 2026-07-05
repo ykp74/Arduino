@@ -326,10 +326,10 @@ void setup()
     // Display.displaySet(2);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
     // Display.displayNum(0,0);
 
-    ind_led_eable(true);
+    digitalWrite(PIN_IND_LED, true);
     delay(1000); // 1000ms(1초) 대기
-    ind_led_eable(false);
-    Serial.print(F("\r\nPS4 Bluetooth Library Started"));
+    digitalWrite(PIN_IND_LED, false);
+    Serial.println(F("\r\nPS4 Bluetooth Library Started"));
 }
 
 void loop()
