@@ -60,7 +60,7 @@ NODE* currNode;
 
 struct _status {
     uint8_t num_files = 0;
-    bool isPlayback = false;
+    volatile bool isPlayback = false;
 };
 
 _status status;
@@ -71,6 +71,7 @@ void initNode(void)
     node_cnt = 0;
  
     head = getNode();
+    currNode = head;
     Serial.println(F("initNode"));
 }
 
@@ -96,9 +97,15 @@ void addNode2Tail(char* fileName)
 
 int8_t getPlayNextNodeCnt(void)
 {
-    current_track++;
-    if(current_track == node_cnt){
+    if (node_cnt <= 1) {
         current_track = 1;
+        return 0;           // 등록된 곡 없음
+    }
+
+    if (current_track < 1 || current_track >= node_cnt - 1) {
+        current_track = 1;  // 마지막곡이면 첫 번째 곡으로 이동
+    } else {
+        current_track++;    // 다음 곡으로 이동
     }
     return current_track;
 }
@@ -178,6 +185,51 @@ void displayNumbers(uint8_t count)
 
     Display.displayNum(1,dec);
     Display.displayNum(2,cnt);
+}
+
+bool hasValidTrack(void)
+{
+    return node_cnt > 1 &&
+           current_track >= 1 &&
+           current_track < node_cnt;
+}
+
+void playCurrentTrack(void)
+{
+    status.isPlayback = false;
+
+    if (!hasValidTrack()) {
+        Serial.println(F("No valid track"));
+        return;
+    }
+
+    if (MP3player.getState() == uninitialized) {
+        Serial.println(F("MP3 player is not initialized"));
+        return;
+    }
+
+    Serial.print(F("PLAY # "));
+    Serial.print(current_track);
+    Serial.print(F(" "));
+    Serial.println(node[current_track].file_name);
+
+#ifdef FEATURE_LCD
+    printLCDScreen(1, node[current_track].file_name);
+#endif
+
+    displayNumbers(current_track);
+
+    uint8_t result = MP3player.playMP3(node[current_track].file_name, 0);
+
+    if (result != 0) {
+        Serial.print(F("Playback Error: "));
+        Serial.println(result);
+        Display.displayNum(0, 0x5);
+        return;
+    }
+
+    Display.displayNum(0, 0xe);
+    status.isPlayback = (MP3player.getState() == playback);
 }
 
 /**
@@ -266,6 +318,89 @@ void loop()
     MP3player.available();
 #endif
 
+    // 모든 버튼의 디바운스 상태를 매 루프 갱신
+    bool playChanged = b_Play.update();
+    bool nextChanged = b_Next.update();
+    bool stopChanged = b_Stop.update();
+
+    bool playPressed = playChanged && b_Play.read() == HIGH;
+    bool nextPressed = nextChanged && b_Next.read() == HIGH;
+    bool stopPressed = stopChanged && b_Stop.read() == HIGH;
+
+    if (MP3player.getState() == uninitialized) {
+        status.isPlayback = false;
+
+        if (playPressed || nextPressed || stopPressed) {
+            Serial.println(F("MP3 player is not initialized"));
+        }
+        return;
+    }
+
+    // 동시에 누른 경우 정지를 우선 처리
+    if (stopPressed) {
+        status.isPlayback = false;
+        MP3player.stopTrack();
+        Display.displayNum(0, 0x5);
+        Serial.println(F("STOP"));
+        return;
+    }
+
+    if (!hasValidTrack()) {
+        status.isPlayback = false;
+
+        if (playPressed || nextPressed) {
+            Serial.println(F("No valid track"));
+        }
+        return;
+    }
+
+    if (playPressed) {
+        auto state = MP3player.getState();
+
+        if (state == playback) {
+            status.isPlayback = false;
+            MP3player.pauseMusic();
+            Serial.println(F("PAUSE"));
+        } else if (state == paused_playback) {
+            MP3player.resumeMusic();
+            status.isPlayback =
+                (MP3player.getState() == playback);
+            Serial.println(F("RESUME"));
+        } else {
+            playCurrentTrack();
+        }
+    }
+
+    if (nextPressed) {
+        auto state = MP3player.getState();
+        bool restartPlayback =
+            state == playback || state == paused_playback;
+
+        status.isPlayback = false;
+
+        if (getPlayNextNodeCnt() != 0) {
+            Serial.print(F("NEXT # "));
+            Serial.print(current_track);
+            Serial.print(F(" "));
+            Serial.println(node[current_track].file_name);
+
+            if (restartPlayback) {
+                // 기존 동작 유지: 일시정지 중 NEXT도 다음 곡 재생
+                MP3player.stopTrack();
+                delay(100);
+                playCurrentTrack();
+            } else {
+#ifdef FEATURE_LCD
+                printLCDScreen(
+                    1, node[current_track].file_name);
+#endif
+                displayNumbers(current_track);
+                Display.displayNum(0, 0x5);
+            }
+        }
+    }
+
+#if 0
     if( b_Play.update()) {
         if( b_Play.read() == HIGH ) {
             Serial.print(F("B_PLAY pressed # "));
@@ -346,4 +481,15 @@ void loop()
             status.isPlayback = false;
         }
     }
+#endif
+
+    // 자연 종료 등 실제 플레이어 상태 변화 반영
+    bool playingNow = (MP3player.getState() == playback);
+    bool wasPlaying = status.isPlayback;
+    status.isPlayback = playingNow;
+
+    if (wasPlaying && !playingNow) {
+        Display.displayNum(0, 0x5);  // 재생 종료
+    }
+
 }
